@@ -275,6 +275,12 @@ class InterfaceController: WKInterfaceController {
             self.hasUnsavedChanges = true
             persistSessionForRecovery(force: true)
             WKInterfaceDevice.current().play(.directionUp)
+            newPinButton.setTitle("✓")
+            newPinButton.setBackgroundColor(kGreenButtonBackgroundColor)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                self.newPinButton.setTitle("📍")
+                self.newPinButton.setBackgroundColor(kWhiteBackgroundColor)
+            }
         }
 
     }
