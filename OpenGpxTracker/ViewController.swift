@@ -128,6 +128,17 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate {
     /// Stop watch instance to control elapsed time
     var stopWatch = StopWatch()
 
+    /// The original base filename chosen by the user (without counter suffixes).
+    /// Used as the root when auto-incrementing on re-save.
+    /// Persisted to UserDefaults so crash recovery can restore the correct value.
+    var gpxFilenameSaveBase: String = "" {
+        didSet {
+            if gpxFilenameSaveBase != oldValue {
+                UserDefaults.standard.set(gpxFilenameSaveBase, forKey: "gpxFilenameSaveBase")
+            }
+        }
+    }
+
     /// Name of the last file that was saved (without extension)
     var lastGpxFilename: String = "" {
         didSet {
@@ -203,6 +214,7 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate {
 
                 map.clearMap()        // Clear map
                 lastGpxFilename = "" // Clear last filename, so when saving it appears an empty field
+                gpxFilenameSaveBase = "" // Clear base filename
 
                 map.coreDataHelper.clearAll()
                 map.coreDataHelper.coreDataDeleteAll(of: CDRoot.self) // deleteCDRootFromCoreData()
@@ -927,6 +939,7 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate {
         }
 
         lastGpxFilename = fileName
+        gpxFilenameSaveBase = UserDefaults.standard.string(forKey: "gpxFilenameSaveBase") ?? ""
         // Adds last file name to core data as well
         self.map.coreDataHelper.add(toCoreData: fileName, willContinueAfterSave: false)
         // Force reset timer just in case reset does not do it
@@ -1203,7 +1216,8 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate {
 
         // Auto-save with counter if enabled and track was previously saved
         if Preferences.shared.autoSaveCounter && !lastGpxFilename.isEmpty {
-            let filename = GPXFileManager.nextAvailableFilename(for: lastGpxFilename)
+            let base = gpxFilenameSaveBase.isEmpty ? lastGpxFilename : gpxFilenameSaveBase
+            let filename = GPXFileManager.nextAvailableFilename(for: base)
             performSave(filename: filename, withReset: withReset)
 
             let alert = UIAlertController(
@@ -1242,6 +1256,9 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate {
         print("Save File \(filename)")
         let gpxString = self.map.exportToGPXString()
         GPXFileManager.save(filename, gpxContents: gpxString)
+        if self.gpxFilenameSaveBase.isEmpty {
+            self.gpxFilenameSaveBase = filename
+        }
         self.lastGpxFilename = filename
         self.map.coreDataHelper.coreDataDeleteAll(of: CDRoot.self)
         self.map.coreDataHelper.clearAllExceptWaypoints()
@@ -1460,6 +1477,7 @@ extension ViewController: GPXFilesTableViewControllerDelegate {
         self.resetButtonTapped()
         // println("Loaded GPX file", gpx.gpx())
         lastGpxFilename = gpxFilename
+        gpxFilenameSaveBase = gpxFilename
         // Adds last file name to core data as well
         self.map.coreDataHelper.add(toCoreData: gpxFilename, willContinueAfterSave: false)
         // Force reset timer just in case reset does not do it

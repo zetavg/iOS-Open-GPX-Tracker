@@ -70,25 +70,20 @@ class GPXFileManager: NSObject {
     }
 
     /// Returns the next available filename by appending a counter suffix (-1, -2, etc.).
-    /// Strips any existing counter suffix before incrementing, so `track-2` becomes `track-3` (not `track-2-1`).
+    ///
+    /// The caller is responsible for passing the original base name (without any
+    /// previously appended counter suffix). This function simply appends `-1`,
+    /// `-2`, etc. until it finds a name that does not already exist on disk.
     ///
     /// - Parameters:
-    ///     - basename: the base filename without extension (e.g. "my-track" or "my-track-2")
+    ///     - basename: the base filename without extension or counter suffix (e.g. "my-track")
     /// - Returns: the next available filename with counter suffix, without extension
     class func nextAvailableFilename(for basename: String) -> String {
-        // Strip any existing counter suffix to get the root name.
-        let rootName: String
-        if let dashRange = basename.range(of: "-", options: .backwards),
-           let _ = Int(basename[dashRange.upperBound...]) {
-            rootName = String(basename[basename.startIndex..<dashRange.lowerBound])
-        } else {
-            rootName = basename
-        }
         var counter = 1
-        var candidate = "\(rootName)-\(counter)"
+        var candidate = "\(basename)-\(counter)"
         while fileExists(candidate) {
             counter += 1
-            candidate = "\(rootName)-\(counter)"
+            candidate = "\(basename)-\(counter)"
         }
         return candidate
     }

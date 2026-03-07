@@ -50,6 +50,8 @@ class WatchSessionRecovery {
         var wasTracking: Bool
         /// The last GPX filename used for a user-initiated save (may be empty).
         var lastGpxFilename: String
+        /// The original base filename chosen by the user (without counter suffixes).
+        var gpxFilenameSaveBase: String
         /// Whether the session had any waypoints.
         var hasWaypoints: Bool
         /// Whether there were unsaved changes at the time of the persist.
@@ -62,14 +64,16 @@ class WatchSessionRecovery {
             elapsedTime = try container.decode(TimeInterval.self, forKey: .elapsedTime)
             wasTracking = try container.decode(Bool.self, forKey: .wasTracking)
             lastGpxFilename = try container.decode(String.self, forKey: .lastGpxFilename)
+            gpxFilenameSaveBase = try container.decodeIfPresent(String.self, forKey: .gpxFilenameSaveBase) ?? ""
             hasWaypoints = try container.decode(Bool.self, forKey: .hasWaypoints)
             hasUnsavedChanges = try container.decodeIfPresent(Bool.self, forKey: .hasUnsavedChanges) ?? true
         }
 
-        init(elapsedTime: TimeInterval, wasTracking: Bool, lastGpxFilename: String, hasWaypoints: Bool, hasUnsavedChanges: Bool) {
+        init(elapsedTime: TimeInterval, wasTracking: Bool, lastGpxFilename: String, gpxFilenameSaveBase: String, hasWaypoints: Bool, hasUnsavedChanges: Bool) {
             self.elapsedTime = elapsedTime
             self.wasTracking = wasTracking
             self.lastGpxFilename = lastGpxFilename
+            self.gpxFilenameSaveBase = gpxFilenameSaveBase
             self.hasWaypoints = hasWaypoints
             self.hasUnsavedChanges = hasUnsavedChanges
         }
@@ -87,6 +91,7 @@ class WatchSessionRecovery {
     ///   - elapsedTime: Current stopwatch elapsed time in seconds.
     ///   - isTracking: Whether the app is currently in `.tracking` status.
     ///   - lastGpxFilename: The last saved GPX filename (may be empty).
+    ///   - gpxFilenameSaveBase: The original base filename chosen by the user.
     ///   - hasWaypoints: Whether the session contains waypoints.
     ///   - hasUnsavedChanges: Whether there are changes not yet saved to a GPX file.
     ///
@@ -94,6 +99,7 @@ class WatchSessionRecovery {
                      elapsedTime: TimeInterval,
                      isTracking: Bool,
                      lastGpxFilename: String,
+                     gpxFilenameSaveBase: String,
                      hasWaypoints: Bool,
                      hasUnsavedChanges: Bool) {
 
@@ -115,6 +121,7 @@ class WatchSessionRecovery {
         let meta = RecoveryMetadata(elapsedTime: elapsedTime,
                                     wasTracking: isTracking,
                                     lastGpxFilename: lastGpxFilename,
+                                    gpxFilenameSaveBase: gpxFilenameSaveBase,
                                     hasWaypoints: hasWaypoints,
                                     hasUnsavedChanges: hasUnsavedChanges)
         if let data = try? JSONEncoder().encode(meta) {
