@@ -29,6 +29,7 @@
 "LAST_SAVED" = "Last saved %@ (%@)";
 "DELETE" = "Delete";
 "SELECT_OPTION" = "Select option";
+"RESET_UNSAVED_CHANGES" = "You have unsaved changes that will be lost.";
 "LOAD_IN_MAP" = "Load in map";
 "SHARE" = "Share";
 "LOADING_FILE" = "Loading GPX File...";
