@@ -73,14 +73,14 @@ extension ExtensionDelegate: WCSessionDelegate {
             // Apply any previously received application context (persists across launches).
             let context = session.receivedApplicationContext
             if !context.isEmpty {
-                Preferences.shared.applyDateFormatFromContext(context)
+                Preferences.shared.applySettingsFromContext(context)
                 print("ExtensionDelegate:: applied receivedApplicationContext")
             }
         }
     }
 
     func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String: Any]) {
-        Preferences.shared.applyDateFormatFromContext(applicationContext)
+        Preferences.shared.applySettingsFromContext(applicationContext)
         print("ExtensionDelegate:: applied new applicationContext from iOS")
     }
 }

@@ -263,7 +263,7 @@ class Preferences: NSObject {
         set {
              _dateFormat = newValue
              defaults.set(newValue, forKey: kDefaultsKeyDateFormat)
-             syncDateFormatToWatch()
+             syncSettingsToWatch()
         }
     }
 
@@ -304,7 +304,7 @@ class Preferences: NSObject {
         set {
             _dateFormatUseUTC = newValue
              defaults.set(newValue, forKey: kDefaultsKeyDateFormatUseUTC)
-             syncDateFormatToWatch()
+             syncSettingsToWatch()
         }
     }
 
@@ -316,12 +316,12 @@ class Preferences: NSObject {
         set {
             _dateFormatUseEN = newValue
              defaults.set(newValue, forKey: kDefaultsKeyDateFormatUseEN)
-             syncDateFormatToWatch()
+             syncSettingsToWatch()
         }
     }
 
-    /// Applies date format settings received from a context dictionary (e.g. from WatchConnectivity).
-    func applyDateFormatFromContext(_ context: [String: Any]) {
+    /// Applies settings received from a context dictionary (e.g. from WatchConnectivity).
+    func applySettingsFromContext(_ context: [String: Any]) {
         if let dateFormat = context[kDefaultsKeyDateFormat] as? String {
             _dateFormat = dateFormat
             defaults.set(dateFormat, forKey: kDefaultsKeyDateFormat)
@@ -336,9 +336,9 @@ class Preferences: NSObject {
         }
     }
 
-    /// Sends current date format preferences to Apple Watch via WCSession applicationContext.
+    /// Sends current preferences to Apple Watch via WCSession applicationContext.
     /// Only effective on iOS when WCSession is activated.
-    func syncDateFormatToWatch() {
+    func syncSettingsToWatch() {
         #if os(iOS)
         guard WCSession.isSupported() else { return }
         let session = WCSession.default
@@ -350,9 +350,9 @@ class Preferences: NSObject {
         ]
         do {
             try session.updateApplicationContext(context)
-            print("Preferences:: synced date format to Watch")
+            print("Preferences:: synced settings to Watch")
         } catch {
-            print("Preferences:: failed to sync date format to Watch: \(error)")
+            print("Preferences:: failed to sync settings to Watch: \(error)")
         }
         #endif
     }
