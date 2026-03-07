@@ -279,6 +279,12 @@ class InterfaceController: WKInterfaceController {
             WatchSessionRecovery.shared.appendWaypoint(coordinate: currentCoordinates, altitude: altitude)
             persistSessionForRecovery(force: true)
             WKInterfaceDevice.current().play(.directionUp)
+            newPinButton.setTitle("✓")
+            newPinButton.setBackgroundColor(kGreenButtonBackgroundColor)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                self.newPinButton.setTitle("📍")
+                self.newPinButton.setBackgroundColor(kWhiteBackgroundColor)
+            }
         }
 
     }
