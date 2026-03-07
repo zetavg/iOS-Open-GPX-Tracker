@@ -9,6 +9,7 @@
 
 import Foundation
 import CoreLocation
+import WatchConnectivity
 
 /// Key on Defaults for the Tile Server integer.
 let kDefaultsKeyTileServerInt: String = "TileServerInt"
@@ -59,50 +60,50 @@ class Preferences: NSObject {
     ///      print (preferences.useCache)
     ///
     static let shared = Preferences()
-    
+
     /// In memory value of the preference.
     private var _useImperial: Bool = false
-    
+
     /// In memory value of the preference.
     private var _useCache: Bool = true
-    
+
     /// In memory value of the preference.
     private var _tileServer: GPXTileServer = .apple
-    
+
     /// In memory value of the preference.
     private var _activityType: CLActivityType = .other
-    
+
     ///
     private var _dateFormat = "dd-MMM-yyyy-HHmm"
-    
+
     ///
     private var _dateFormatInput = "{dd}-{MMM}-{yyyy}-{HH}{mm}"
-    
+
     ///
     private var _dateFormatPreset: Int = 0
-    
+
     ///
     private var _dateFormatUseUTC: Bool = false
-    
+
     ///
     private var _dateFormatUseEN: Bool = false
-    
+
     ///
     private var _gpxFilesFolderBookmark: Data?
-    
+
     ///
     private var _keepScreenAlwaysOn: Bool = false
-    
+
     ///
     private var _showScaleBar: Bool = true
-    
+
     /// UserDefaults.standard shortcut
     private let defaults = UserDefaults.standard
-    
+
     /// Loads preferences from UserDefaults.
     private override init() {
         // Loads preferences into private vars
-     
+
         // Use Imperial units
         if let useImperialDefaults = defaults.object(forKey: kDefaultsKeyUseImperial) as? Bool {
             print("** Preferences:: loaded from defaults. useImperial: \(useImperialDefaults)")
@@ -114,13 +115,13 @@ class Preferences: NSObject {
             let useMetric = locale.usesMetricSystem
             print("** Preferences:: NO defaults for useImperial. Using locale: \(langCode) useImperial: \(_useImperial) usesMetric:\(useMetric)")
         }
-    
+
         // Use cache
         if let useCacheFromDefaults = defaults.object(forKey: kDefaultsKeyUseCache) as? Bool {
             _useCache = useCacheFromDefaults
             print("Preferences:: loaded preference from defaults useCache= \(useCacheFromDefaults)")
         }
-        
+
         // Map Tile server
         if var tileServerInt = defaults.object(forKey: kDefaultsKeyTileServerInt) as? Int {
             // Check in case it was a tile server that is no longer supported
@@ -128,63 +129,63 @@ class Preferences: NSObject {
             _tileServer = GPXTileServer(rawValue: tileServerInt)!
             print("** Preferences:: loaded preference from defaults tileServerInt \(tileServerInt)")
         }
-        
+
         // load previous activity type
         if let activityTypeInt = defaults.object(forKey: kDefaultsKeyActivityType) as? Int {
             _activityType = CLActivityType(rawValue: activityTypeInt)!
             print("** Preferences:: loaded preference from defaults activityTypeInt \(activityTypeInt)")
         }
-        
+
         // load previous date format
         if let dateFormatStr = defaults.object(forKey: kDefaultsKeyDateFormat) as? String {
             _dateFormat = dateFormatStr
             print("** Preferences:: loaded preference from defaults dateFormatStr \(dateFormatStr)")
         }
-        
+
         // load previous date format (usr input)
         if let dateFormatStrIn = defaults.object(forKey: kDefaultsKeyDateFormatInput) as? String {
             _dateFormatInput = dateFormatStrIn
             print("** Preferences:: loaded preference from defaults dateFormatStrIn \(dateFormatStrIn)")
         }
-        
+
         // load previous date format preset
         if let dateFormatPresetInt = defaults.object(forKey: kDefaultsKeyDateFormatPreset) as? Int {
             _dateFormatPreset = dateFormatPresetInt
             print("** Preferences:: loaded preference from defaults dateFormatPresetInt \(dateFormatPresetInt)")
         }
-        
+
         // load previous date format, to use UTC time instead of local time
         if let dateFormatUTCBool = defaults.object(forKey: kDefaultsKeyDateFormatUseUTC) as? Bool {
             _dateFormatUseUTC = dateFormatUTCBool
             print("** Preferences:: loaded preference from defaults dateFormatPresetUTCBool \(dateFormatUTCBool)")
         }
-        
+
         // load previous date format, to use EN locale instead of local locale
         if let dateFormatENBool = defaults.object(forKey: kDefaultsKeyDateFormatUseEN) as? Bool {
             _dateFormatUseEN = dateFormatENBool
             print("** Preferences:: loaded preference from defaults dateFormatPresetENBool \(dateFormatENBool)")
         }
-        
+
         // load previous gpx files folder bookmark
         if let gpxFilesFolderBookmark = defaults.object(forKey: kDefaultsKeyGPXFilesFolder) as? Data {
             _gpxFilesFolderBookmark = gpxFilesFolderBookmark
             print("** Preferences:: loaded preference from defaults gpxFilesFolderBookmark \(gpxFilesFolderBookmark)")
         }
-        
+
         // load previous date format, to use EN locale instead of local locale
         if let keepScreenAlwaysOnBool = defaults.object(forKey: kDefaultsKeyKeepScreenAlwaysOn) as? Bool {
             _keepScreenAlwaysOn = keepScreenAlwaysOnBool
             print("** Preferences:: loaded preference from defaults keepScreenAlwaysOn \(keepScreenAlwaysOnBool)")
         }
-        
+
         // load previous show scale bar preference
         if let showScaleBarBool = defaults.object(forKey: kDefaultsKeyShowScaleBar) as? Bool {
             _showScaleBar = showScaleBarBool
             print("** Preferences:: loaded preference from defaults showScaleBar \(showScaleBarBool)")
         }
-        
+
     }
-    
+
     /// If true, user prefers to display imperial units (miles, feets). Otherwise metric units
     /// are displayed.
     var useImperial: Bool {
@@ -196,7 +197,7 @@ class Preferences: NSObject {
             defaults.set(newValue, forKey: kDefaultsKeyUseImperial)
         }
     }
-    
+
     /// Gets and sets if user wants to use offline cache.
     var useCache: Bool {
         get {
@@ -208,19 +209,19 @@ class Preferences: NSObject {
             defaults.set(newValue, forKey: kDefaultsKeyUseCache)
         }
     }
-    
+
     /// Gets and sets user preference of the map tile server.
     var tileServer: GPXTileServer {
         get {
             return _tileServer
         }
-        
+
         set {
             _tileServer = newValue
              defaults.set(newValue.rawValue, forKey: kDefaultsKeyTileServerInt)
         }
     }
-    
+
     /// Get and sets user preference of the map tile server as Int.
     var tileServerInt: Int {
         get {
@@ -241,7 +242,7 @@ class Preferences: NSObject {
             defaults.set(newValue.rawValue, forKey: kDefaultsKeyActivityType)
         }
     }
-    
+
     /// Gets and sets the activity type as its int value
     var locationActivityTypeInt: Int {
         get {
@@ -252,31 +253,32 @@ class Preferences: NSObject {
             defaults.set(newValue, forKey: kDefaultsKeyActivityType)
         }
     }
-    
+
     /// Gets and sets the date formatter friendly date format
     var dateFormat: String {
         get {
             return _dateFormat
         }
-        
+
         set {
              _dateFormat = newValue
              defaults.set(newValue, forKey: kDefaultsKeyDateFormat)
+             syncDateFormatToWatch()
         }
     }
-    
+
     /// Gets and sets the user friendly input date format
     var dateFormatInput: String {
         get {
             return _dateFormatInput
         }
-        
+
         set {
              _dateFormatInput = newValue
              defaults.set(newValue, forKey: kDefaultsKeyDateFormatInput)
         }
     }
-    
+
     /// Get and sets user preference of date format presets. (-1 if custom)
     var dateFormatPreset: Int {
         get {
@@ -287,13 +289,13 @@ class Preferences: NSObject {
              defaults.set(newValue, forKey: kDefaultsKeyDateFormatPreset)
         }
     }
-    
+
     /// Get date format preset name
     var dateFormatPresetName: String {
         let presets =  ["Defaults", "ISO8601 (UTC)", "ISO8601 (UTC offset)", "Day, Date at time (12 hr)", "Day, Date at time (24 hr)"]
         return _dateFormatPreset < presets.count ? presets[_dateFormatPreset] : "???"
     }
-    
+
     /// Get and sets whether to use UTC for date format
     var dateFormatUseUTC: Bool {
         get {
@@ -302,9 +304,10 @@ class Preferences: NSObject {
         set {
             _dateFormatUseUTC = newValue
              defaults.set(newValue, forKey: kDefaultsKeyDateFormatUseUTC)
+             syncDateFormatToWatch()
         }
     }
-    
+
     /// Get and sets whether to use local locale or EN
     var dateFormatUseEN: Bool {
         get {
@@ -313,9 +316,47 @@ class Preferences: NSObject {
         set {
             _dateFormatUseEN = newValue
              defaults.set(newValue, forKey: kDefaultsKeyDateFormatUseEN)
+             syncDateFormatToWatch()
         }
     }
-    
+
+    /// Applies date format settings received from a context dictionary (e.g. from WatchConnectivity).
+    func applyDateFormatFromContext(_ context: [String: Any]) {
+        if let dateFormat = context[kDefaultsKeyDateFormat] as? String {
+            _dateFormat = dateFormat
+            defaults.set(dateFormat, forKey: kDefaultsKeyDateFormat)
+        }
+        if let useUTC = context[kDefaultsKeyDateFormatUseUTC] as? Bool {
+            _dateFormatUseUTC = useUTC
+            defaults.set(useUTC, forKey: kDefaultsKeyDateFormatUseUTC)
+        }
+        if let useEN = context[kDefaultsKeyDateFormatUseEN] as? Bool {
+            _dateFormatUseEN = useEN
+            defaults.set(useEN, forKey: kDefaultsKeyDateFormatUseEN)
+        }
+    }
+
+    /// Sends current date format preferences to Apple Watch via WCSession applicationContext.
+    /// Only effective on iOS when WCSession is activated.
+    func syncDateFormatToWatch() {
+        #if os(iOS)
+        guard WCSession.isSupported() else { return }
+        let session = WCSession.default
+        guard session.activationState == .activated else { return }
+        let context: [String: Any] = [
+            kDefaultsKeyDateFormat: _dateFormat,
+            kDefaultsKeyDateFormatUseUTC: _dateFormatUseUTC,
+            kDefaultsKeyDateFormatUseEN: _dateFormatUseEN
+        ]
+        do {
+            try session.updateApplicationContext(context)
+            print("Preferences:: synced date format to Watch")
+        } catch {
+            print("Preferences:: failed to sync date format to Watch: \(error)")
+        }
+        #endif
+    }
+
     /// Get and sets whether to set the screen always On or not
     var keepScreenAlwaysOn: Bool {
         get {
@@ -327,7 +368,7 @@ class Preferences: NSObject {
             print("** Preferences:: setting keepScreenAlwaysOn: \(newValue)")
         }
     }
-    
+
     /// Get and sets whether to display the scale bar on the map
     var showScaleBar: Bool {
         get {
@@ -339,7 +380,7 @@ class Preferences: NSObject {
             print("** Preferences:: setting showScaleBar: \(newValue)")
         }
     }
-    
+
     var gpxFilesFolderURL: URL? {
         get {
             guard let bookmarkData = self._gpxFilesFolderBookmark else {

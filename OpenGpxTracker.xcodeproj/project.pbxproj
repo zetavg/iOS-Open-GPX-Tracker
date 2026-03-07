@@ -88,8 +88,10 @@
 		BF692F892209B82500F8A0F1 /* StopWatch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 899D677119CE8B3600C88A0A /* StopWatch.swift */; };
 		BF9AE57C2410011D00B103A0 /* DefaultNameSetupViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF9AE57B2410011D00B103A0 /* DefaultNameSetupViewController.swift */; };
 		BF9AE57E2410012700B103A0 /* DefaultDateFormat.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF9AE57D2410012700B103A0 /* DefaultDateFormat.swift */; };
+		BF9AE5802410012700B103A0 /* DefaultDateFormat.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF9AE57D2410012700B103A0 /* DefaultDateFormat.swift */; };
 		BFB06F02244A037300AC0CDC /* UIColor+Keyboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFB06F01244A037300AC0CDC /* UIColor+Keyboard.swift */; };
 		BFE026C0244A0160005423E6 /* String+CountInstances.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFE026BF244A0160005423E6 /* String+CountInstances.swift */; };
+		BFE026C8244A0160005423E6 /* String+CountInstances.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFE026BF244A0160005423E6 /* String+CountInstances.swift */; };
 		BFE026C2244A01DB005423E6 /* UIInsetLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFE026C1244A01DB005423E6 /* UIInsetLabel.swift */; };
 		BFE026C4244A0281005423E6 /* DateField.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFE026C3244A0281005423E6 /* DateField.swift */; };
 		BFE026C6244A02A4005423E6 /* DatePatternButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFE026C5244A02A4005423E6 /* DatePatternButton.swift */; };
@@ -815,6 +817,8 @@
 				BF692F882209B81E00F8A0F1 /* GPXFileInfo.swift in Sources */,
 				BF36B6CF220C6F1A00077B46 /* GPXFileTableInterfaceController.swift in Sources */,
 				120DE71122B274A40055C4CB /* GPXSession.swift in Sources */,
+				BF9AE5802410012700B103A0 /* DefaultDateFormat.swift in Sources */,
+				BFE026C8244A0160005423E6 /* String+CountInstances.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -7,11 +7,17 @@
 //
 
 import WatchKit
+import WatchConnectivity
 
 class ExtensionDelegate: NSObject, WKExtensionDelegate {
 
     func applicationDidFinishLaunching() {
-        // Perform any final initialization of your application.
+        // Activate WCSession to receive preferences from the iOS app.
+        if WCSession.isSupported() {
+            let session = WCSession.default
+            session.delegate = self
+            session.activate()
+        }
     }
 
     func applicationDidBecomeActive() {
@@ -57,4 +63,24 @@ class ExtensionDelegate: NSObject, WKExtensionDelegate {
         }
     }
 
+}
+
+// MARK: WCSessionDelegate
+extension ExtensionDelegate: WCSessionDelegate {
+
+    func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
+        if activationState == .activated {
+            // Apply any previously received application context (persists across launches).
+            let context = session.receivedApplicationContext
+            if !context.isEmpty {
+                Preferences.shared.applyDateFormatFromContext(context)
+                print("ExtensionDelegate:: applied receivedApplicationContext")
+            }
+        }
+    }
+
+    func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String: Any]) {
+        Preferences.shared.applyDateFormatFromContext(applicationContext)
+        print("ExtensionDelegate:: applied new applicationContext from iOS")
+    }
 }
