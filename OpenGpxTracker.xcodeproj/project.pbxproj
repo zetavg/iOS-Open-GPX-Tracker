@@ -62,6 +62,7 @@
 		BF1FE1A8230EAB9B00404B59 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = BF1FE1A6230EAB9B00404B59 /* Localizable.strings */; };
 		BF214B5E22E60B64000E96AA /* CLActivityType+Info.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF214B5D22E60B64000E96AA /* CLActivityType+Info.swift */; };
 		BF36B6CF220C6F1A00077B46 /* GPXFileTableInterfaceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF36B6CE220C6F1A00077B46 /* GPXFileTableInterfaceController.swift */; };
+		C1A2B3C52826A00100FACADE /* WatchSessionRecovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A2B3C42826A00100FACADE /* WatchSessionRecovery.swift */; };
 		BF5C0D2222D771D1001C2575 /* DistanceLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF5C0D2122D771D0001C2575 /* DistanceLabel.swift */; };
 		BF637D132216C5FA0003EC04 /* WatchConnectivity.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BF637D122216C5FA0003EC04 /* WatchConnectivity.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
 		BF6408A3225C63E700BB5242 /* CoreDataHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF6408A2225C63E700BB5242 /* CoreDataHelper.swift */; };
@@ -261,6 +262,7 @@
 		BF692F682209AAFB00F8A0F1 /* InterfaceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InterfaceController.swift; sourceTree = "<group>"; };
 		BF692F6A2209AAFB00F8A0F1 /* ExtensionDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtensionDelegate.swift; sourceTree = "<group>"; };
 		BF692F6C2209AAFB00F8A0F1 /* ComplicationController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComplicationController.swift; sourceTree = "<group>"; };
+		C1A2B3C42826A00100FACADE /* WatchSessionRecovery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchSessionRecovery.swift; sourceTree = "<group>"; };
 		BF692F6E2209AAFC00F8A0F1 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		BF692F702209AAFC00F8A0F1 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		BF9AE57B2410011D00B103A0 /* DefaultNameSetupViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DefaultNameSetupViewController.swift; sourceTree = "<group>"; };
@@ -508,6 +510,7 @@
 				BF692F682209AAFB00F8A0F1 /* InterfaceController.swift */,
 				BF692F6A2209AAFB00F8A0F1 /* ExtensionDelegate.swift */,
 				BF692F6C2209AAFB00F8A0F1 /* ComplicationController.swift */,
+				C1A2B3C42826A00100FACADE /* WatchSessionRecovery.swift */,
 				BF692F6E2209AAFC00F8A0F1 /* Assets.xcassets */,
 				BF692F702209AAFC00F8A0F1 /* Info.plist */,
 				4588D671230D2476009AA75F /* InfoPlist.strings */,
@@ -819,6 +822,7 @@
 				120DE71122B274A40055C4CB /* GPXSession.swift in Sources */,
 				BF9AE5802410012700B103A0 /* DefaultDateFormat.swift in Sources */,
 				BFE026C8244A0160005423E6 /* String+CountInstances.swift in Sources */,
+				C1A2B3C52826A00100FACADE /* WatchSessionRecovery.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
