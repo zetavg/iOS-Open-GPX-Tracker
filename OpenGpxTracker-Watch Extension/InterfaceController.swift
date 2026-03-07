@@ -250,11 +250,14 @@ class InterfaceController: WKInterfaceController {
         switch gpxTrackingStatus {
         case .notStarted:
             gpxTrackingStatus = .tracking
+            WKInterfaceDevice.current().play(.start)
         case .tracking:
             gpxTrackingStatus = .paused
+            WKInterfaceDevice.current().play(.stop)
         case .paused:
             // Set to tracking
             gpxTrackingStatus = .tracking
+            WKInterfaceDevice.current().play(.start)
         }
 
     }
@@ -273,6 +276,7 @@ class InterfaceController: WKInterfaceController {
             self.hasWaypoints = true
             self.hasUnsavedChanges = true
             persistSessionForRecovery(force: true)
+            WKInterfaceDevice.current().play(.directionUp)
         }
 
     }
@@ -309,6 +313,7 @@ class InterfaceController: WKInterfaceController {
         // Re-persist recovery immediately so continued tracking after save is protected.
         // (Clearing alone would leave a window with no recovery file until the next GPS update.)
         persistSessionForRecovery(force: true)
+        WKInterfaceDevice.current().play(.success)
         // print(gpxString)
 
         /// Just a 'done' button, without
@@ -325,6 +330,7 @@ class InterfaceController: WKInterfaceController {
     /// It sets map to status .notStarted which clears the map.
     ///
     @IBAction func resetButtonTapped() {
+        WKInterfaceDevice.current().play(.click)
 
         // If there are no unsaved changes, reset immediately without confirmation.
         guard hasUnsavedChanges else {
