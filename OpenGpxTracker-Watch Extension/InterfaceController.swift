@@ -10,6 +10,7 @@ import WatchKit
 import MapKit
 import CoreLocation
 import CoreGPX
+import WatchConnectivity
 
 // Button colors
 let kPurpleButtonBackgroundColor: UIColor =  UIColor(red: 146.0/255.0, green: 166.0/255.0, blue: 218.0/255.0, alpha: 0.90)
@@ -322,6 +323,9 @@ class InterfaceController: WKInterfaceController {
         WKInterfaceDevice.current().play(.success)
         // print(gpxString)
 
+        // Automatically send the saved file to the iOS app
+        sendSavedFileToiOS(filename: filename)
+
         /// Just a 'done' button, without
         let action = WKAlertAction(title: "Done", style: .default) {}
 
@@ -428,6 +432,30 @@ class InterfaceController: WKInterfaceController {
                      preferredStyle: .alert, actions: [button])
     }
 
+    // MARK: - Auto-send to iOS
+
+    /// Sends the just-saved GPX file to the paired iOS app via WatchConnectivity.
+    ///
+    /// The transfer is enqueued in the background. If the iOS app is not reachable
+    /// at the moment, the system will deliver the file when connectivity is restored.
+    func sendSavedFileToiOS(filename: String) {
+        guard WCSession.isSupported() else {
+            print("InterfaceController:: WCSession not supported, skipping auto-send")
+            return
+        }
+        let session = WCSession.default
+        guard session.activationState == .activated else {
+            print("InterfaceController:: WCSession not activated, skipping auto-send")
+            return
+        }
+        let fileURL = GPXFileManager.URLForFilename(filename)
+        guard FileManager.default.fileExists(atPath: fileURL.path) else {
+            print("InterfaceController:: saved file not found at \(fileURL), skipping auto-send")
+            return
+        }
+        print("InterfaceController:: auto-sending \(filename).gpx to iOS app")
+        session.transferFile(fileURL, metadata: ["fileName": "\(filename).gpx"])
+    }
 }
 
 // MARK: StopWatchDelegate
