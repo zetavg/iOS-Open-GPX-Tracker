@@ -170,6 +170,16 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate {
         }
     }
 
+    /// Whether the session has data that hasn't been saved to a GPX file yet.
+    /// Persisted to UserDefaults so crash recovery can restore the correct value.
+    var hasUnsavedChanges: Bool = false {
+        didSet {
+            if hasUnsavedChanges != oldValue {
+                UserDefaults.standard.set(hasUnsavedChanges, forKey: "hasUnsavedChanges")
+            }
+        }
+    }
+
     /// Defines the different statuses regarding tracking current user location.
     enum GpxTrackingStatus {
         
@@ -206,6 +216,7 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate {
 
                 map.coreDataHelper.clearAll()
                 map.coreDataHelper.coreDataDeleteAll(of: CDRoot.self) // deleteCDRootFromCoreData()
+                hasUnsavedChanges = false
                 
                 totalTrackedDistanceLabel.distance = (map.session.totalTrackedDistance)
                 currentSegmentDistanceLabel.distance = (map.session.currentSegmentDistance)
@@ -944,6 +955,7 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate {
         // Center map in GPX data
         self.map.regionToGPXExtent()
         self.gpxTrackingStatus = .paused
+        self.hasUnsavedChanges = UserDefaults.standard.bool(forKey: "hasUnsavedChanges")
         
         self.totalTrackedDistanceLabel.distance = self.map.session.totalTrackedDistance
     }
@@ -1113,6 +1125,7 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate {
             map.addWaypointAtViewPoint(point)
             // Allows save and reset
             self.hasWaypoints = true
+            self.hasUnsavedChanges = true
         }
     }
     
@@ -1131,6 +1144,7 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate {
         map.addWaypoint(waypoint)
         map.coreDataHelper.add(toCoreData: waypoint)
         self.hasWaypoints = true
+        self.hasUnsavedChanges = true
     }
     
     ///
@@ -1150,7 +1164,13 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate {
     ///
     @objc func resetButtonTapped() {
         
-        let sheet = UIAlertController(title: nil, message: NSLocalizedString("SELECT_OPTION", comment: "no comment"), preferredStyle: .actionSheet)
+        // If there are no unsaved changes, reset immediately without confirmation.
+        guard hasUnsavedChanges else {
+            self.gpxTrackingStatus = .notStarted
+            return
+        }
+
+        let sheet = UIAlertController(title: nil, message: NSLocalizedString("RESET_UNSAVED_CHANGES", comment: "no comment"), preferredStyle: .actionSheet)
           
         let cancelOption = UIAlertAction(title: NSLocalizedString("CANCEL", comment: "no comment"), style: .cancel) { _ in
         }
@@ -1243,6 +1263,7 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate {
         self.map.coreDataHelper.coreDataDeleteAll(of: CDRoot.self)
         self.map.coreDataHelper.clearAllExceptWaypoints()
         self.map.coreDataHelper.add(toCoreData: filename, willContinueAfterSave: true)
+        self.hasUnsavedChanges = false
         if withReset {
             self.gpxTrackingStatus = .notStarted
         }
@@ -1548,6 +1569,7 @@ extension ViewController: CLLocationManagerDelegate {
         if gpxTrackingStatus == .tracking {
             print("didUpdateLocation: adding point to track (\(newLocation.coordinate.latitude),\(newLocation.coordinate.longitude))")
             map.addPointToCurrentTrackSegmentAtLocation(newLocation)
+            hasUnsavedChanges = true
             totalTrackedDistanceLabel.distance = map.session.totalTrackedDistance
             currentSegmentDistanceLabel.distance = map.session.currentSegmentDistance
         }

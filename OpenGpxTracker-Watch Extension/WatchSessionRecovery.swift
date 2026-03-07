@@ -54,6 +54,27 @@ class WatchSessionRecovery {
         var lastGpxFilename: String
         /// Whether the session had any waypoints.
         var hasWaypoints: Bool
+        /// Whether there were unsaved changes at the time of the persist.
+        var hasUnsavedChanges: Bool
+
+        /// Backward-compatible decoding: old recovery files without `hasUnsavedChanges`
+        /// default to `true` (conservative — assume data is unsaved).
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            elapsedTime = try container.decode(TimeInterval.self, forKey: .elapsedTime)
+            wasTracking = try container.decode(Bool.self, forKey: .wasTracking)
+            lastGpxFilename = try container.decode(String.self, forKey: .lastGpxFilename)
+            hasWaypoints = try container.decode(Bool.self, forKey: .hasWaypoints)
+            hasUnsavedChanges = try container.decodeIfPresent(Bool.self, forKey: .hasUnsavedChanges) ?? true
+        }
+
+        init(elapsedTime: TimeInterval, wasTracking: Bool, lastGpxFilename: String, hasWaypoints: Bool, hasUnsavedChanges: Bool) {
+            self.elapsedTime = elapsedTime
+            self.wasTracking = wasTracking
+            self.lastGpxFilename = lastGpxFilename
+            self.hasWaypoints = hasWaypoints
+            self.hasUnsavedChanges = hasUnsavedChanges
+        }
     }
 
     // MARK: - Save
@@ -70,13 +91,15 @@ class WatchSessionRecovery {
     ///   - isTracking: Whether the app is currently in `.tracking` status.
     ///   - lastGpxFilename: The last saved GPX filename (may be empty).
     ///   - hasWaypoints: Whether the session contains waypoints.
+    ///   - hasUnsavedChanges: Whether there are changes not yet saved to a GPX file.
     ///
     static func save(session: GPXSession,
                      trackStartDate: Date?,
                      elapsedTime: TimeInterval,
                      isTracking: Bool,
                      lastGpxFilename: String,
-                     hasWaypoints: Bool) {
+                     hasWaypoints: Bool,
+                     hasUnsavedChanges: Bool) {
 
         // Ensure the recovery directory exists.
         let fm = FileManager.default
@@ -97,7 +120,8 @@ class WatchSessionRecovery {
                                     elapsedTime: elapsedTime,
                                     wasTracking: isTracking,
                                     lastGpxFilename: lastGpxFilename,
-                                    hasWaypoints: hasWaypoints)
+                                    hasWaypoints: hasWaypoints,
+                                    hasUnsavedChanges: hasUnsavedChanges)
         if let data = try? JSONEncoder().encode(meta) {
             try? data.write(to: recoveryMetadataURL, options: .atomic)
         }
