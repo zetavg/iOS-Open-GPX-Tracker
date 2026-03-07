@@ -1193,7 +1193,9 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate {
     ///
     /// Triggered when user taps on save Button
     ///
-    /// It prompts the user to set a name of the file.
+    /// If auto-save counter is enabled and the track was previously saved,
+    /// it automatically saves with a counter suffix (e.g. `-1`, `-2`, etc.).
+    /// Otherwise it prompts the user to set a name of the file.
     ///
     @objc func saveButtonTapped(withReset: Bool = false) {
         print("save Button tapped")
@@ -1202,6 +1204,20 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate {
             return
         }
         
+        // Auto-save with counter if enabled and track was previously saved
+        if Preferences.shared.autoSaveCounter && !lastGpxFilename.isEmpty {
+            let filename = GPXFileManager.nextAvailableFilename(for: lastGpxFilename)
+            performSave(filename: filename, withReset: withReset)
+
+            let alert = UIAlertController(
+                title: NSLocalizedString("FILE_SAVED_TITLE", comment: "no comment"),
+                message: "\(filename).gpx",
+                preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: NSLocalizedString("DONE", comment: "no comment"), style: .default))
+            present(alert, animated: true)
+            return
+        }
+
         // save alert configuration and presentation
         let alertController = UIAlertController(title: NSLocalizedString("SAVE_AS", comment: "no comment"), message: NSLocalizedString("ENTER_SESSION_NAME", comment: "no comment"), preferredStyle: .alert)
         
@@ -1213,16 +1229,7 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate {
         let saveAction = UIAlertAction(title: NSLocalizedString("SAVE", comment: "no comment"), style: .default) { _ in
             let filename = (alertController.textFields?[0].text!.utf16.count == 0) ? self.defaultFilename() : alertController.textFields?[0].text
             print("Save File \(String(describing: filename))")
-            // Export to a file
-            let gpxString = self.map.exportToGPXString()
-            GPXFileManager.save(filename!, gpxContents: gpxString)
-            self.lastGpxFilename = filename!
-            self.map.coreDataHelper.coreDataDeleteAll(of: CDRoot.self)
-            self.map.coreDataHelper.clearAllExceptWaypoints()
-            self.map.coreDataHelper.add(toCoreData: filename!, willContinueAfterSave: true)
-            if withReset {
-                self.gpxTrackingStatus = .notStarted
-            }
+            self.performSave(filename: filename!, withReset: withReset)
         }
         let cancelAction = UIAlertAction(title: NSLocalizedString("CANCEL", comment: "no comment"), style: .cancel) { _ in }
         
@@ -1231,6 +1238,20 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate {
         
         present(alertController, animated: true)
         
+    }
+
+    /// Performs the actual save of the GPX file with the given filename.
+    private func performSave(filename: String, withReset: Bool) {
+        print("Save File \(filename)")
+        let gpxString = self.map.exportToGPXString()
+        GPXFileManager.save(filename, gpxContents: gpxString)
+        self.lastGpxFilename = filename
+        self.map.coreDataHelper.coreDataDeleteAll(of: CDRoot.self)
+        self.map.coreDataHelper.clearAllExceptWaypoints()
+        self.map.coreDataHelper.add(toCoreData: filename, willContinueAfterSave: true)
+        if withReset {
+            self.gpxTrackingStatus = .notStarted
+        }
     }
     
     ///
