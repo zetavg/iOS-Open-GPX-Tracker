@@ -148,7 +148,16 @@ class InterfaceController: WKInterfaceController {
                 lastGpxFilename = "" // Clear last filename, so when saving it appears an empty field
                 hasUnsavedChanges = false
 
-                totalTrackedDistanceLabel.setText(map.totalTrackedDistance.toDistance(useImperial: preferences.useImperial))
+                let distStr = map.totalTrackedDistance.toDistance(useImperial: preferences.useImperial)
+                totalTrackedDistanceLabel.setText(distStr)
+
+                // Sync cleared state to SwiftUI map
+                if #available(watchOS 10.0, *) {
+                    let ts = TrackingState.shared
+                    ts.totalDistanceString = distStr
+                    ts.elapsedTimeString = stopWatch.elapsedTimeString
+                    ts.updateFromSession(map)
+                }
 
             case .tracking:
                 print("switched to tracking mode")
@@ -201,6 +210,17 @@ class InterfaceController: WKInterfaceController {
 
         // Attempt crash/force-quit recovery
         attemptSessionRecovery()
+
+        // Bridge actions from the SwiftUI map view back to this controller.
+        if #available(watchOS 10.0, *) {
+            let trackingState = TrackingState.shared
+            trackingState.addWaypointAction = { [weak self] in
+                self?.addPinAtMyLocation()
+            }
+            // Push initial distance
+            trackingState.totalDistanceString = map.totalTrackedDistance.toDistance(useImperial: preferences.useImperial)
+            trackingState.updateFromSession(map)
+        }
     }
 
     override func willActivate() {
@@ -235,6 +255,11 @@ class InterfaceController: WKInterfaceController {
 
     ///
     /// Main Start/Pause Button was tapped.
+    @IBAction func openMapTapped() {
+        WKInterfaceDevice.current().play(.click)
+        pushController(withName: "MapInterfaceController", context: nil)
+    }
+
     ///
     /// It sets the status to tracking or paused.
     ///
@@ -275,6 +300,10 @@ class InterfaceController: WKInterfaceController {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                 self.newPinButton.setTitle("📍")
                 self.newPinButton.setBackgroundColor(kWhiteBackgroundColor)
+            }
+            // Sync waypoints to the SwiftUI map
+            if #available(watchOS 10.0, *) {
+                TrackingState.shared.updateFromSession(map)
             }
         }
 
@@ -457,6 +486,9 @@ class InterfaceController: WKInterfaceController {
 extension InterfaceController: StopWatchDelegate {
     func stopWatch(_ stropWatch: StopWatch, didUpdateElapsedTimeString elapsedTimeString: String) {
         timeLabel.setText(elapsedTimeString)
+        if #available(watchOS 10.0, *) {
+            TrackingState.shared.elapsedTimeString = elapsedTimeString
+        }
     }
 }
 
@@ -525,12 +557,26 @@ extension InterfaceController: CLLocationManagerDelegate {
         // Update speed (provided in m/s, but displayed in km/h)
         speedLabel.setText(newLocation.speed.toSpeed(useImperial: preferences.useImperial))
 
+        // Push location & course to the SwiftUI map view
+        if #available(watchOS 10.0, *) {
+            let ts = TrackingState.shared
+            ts.currentLocation = newLocation
+        }
+
         if gpxTrackingStatus == .tracking {
             print("didUpdateLocation: adding point to track (\(newLocation.coordinate.latitude),\(newLocation.coordinate.longitude))")
             map.addPointToCurrentTrackSegmentAtLocation(newLocation)
             hasUnsavedChanges = true
-            totalTrackedDistanceLabel.setText(map.totalTrackedDistance.toDistance(useImperial: preferences.useImperial))
+            let distStr = map.totalTrackedDistance.toDistance(useImperial: preferences.useImperial)
+            totalTrackedDistanceLabel.setText(distStr)
             persistSessionForRecovery(force: false)
+
+            // Sync track state to the SwiftUI map
+            if #available(watchOS 10.0, *) {
+                let ts = TrackingState.shared
+                ts.totalDistanceString = distStr
+                ts.updateFromSession(map)
+            }
         }
     }
 }
@@ -599,6 +645,14 @@ extension InterfaceController {
         hasUnsavedChanges = recovered.metadata.hasUnsavedChanges
         stopWatch.tmpElapsedTime = recovered.metadata.elapsedTime
         timeLabel.setText(stopWatch.elapsedTimeString)
+
+        // Sync recovered data to the SwiftUI map view
+        if #available(watchOS 10.0, *) {
+            let ts = TrackingState.shared
+            ts.elapsedTimeString = stopWatch.elapsedTimeString
+            ts.totalDistanceString = map.totalTrackedDistance.toDistance(useImperial: preferences.useImperial)
+            ts.updateFromSession(map)
+        }
 
         print("InterfaceController:: session recovered with \(recovered.gpxRoot.tracks.count) track(s), \(recovered.gpxRoot.waypoints.count) waypoint(s), elapsed: \(recovered.metadata.elapsedTime)s")
     }
