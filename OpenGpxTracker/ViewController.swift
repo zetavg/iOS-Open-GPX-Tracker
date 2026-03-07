@@ -1167,18 +1167,12 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate {
           
         let cancelOption = UIAlertAction(title: NSLocalizedString("CANCEL", comment: "no comment"), style: .cancel) { _ in
         }
-        
-        let saveAndStartOption = UIAlertAction(title: NSLocalizedString("SAVE_START_NEW", comment: "no comment"), style: .default) { _ in
-            // Save
-            self.saveButtonTapped(withReset: true)
-        }
-       
+               
         let deleteOption = UIAlertAction(title: NSLocalizedString("RESET", comment: "no comment"), style: .destructive) { _ in
             self.gpxTrackingStatus = .notStarted
         }
         
         sheet.addAction(cancelOption)
-        sheet.addAction(saveAndStartOption)
         sheet.addAction(deleteOption)
         
         self.present(sheet, animated: true) {
