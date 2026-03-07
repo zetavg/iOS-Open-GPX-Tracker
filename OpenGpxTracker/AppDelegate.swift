@@ -199,7 +199,7 @@ extension AppDelegate: WCSessionDelegate {
         switch activationState {
         case .activated:
             print("AppDelegate:: activationDidCompleteWithActivationState: WCSession activated")
-            Preferences.shared.syncDateFormatToWatch()
+            Preferences.shared.syncSettingsToWatch()
         case .inactive:
             print("AppDelegate:: activationDidCompleteWithActivationState: WCSession inactive")
         case .notActivated:
