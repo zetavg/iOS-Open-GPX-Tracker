@@ -45,6 +45,9 @@ let kDefaultsKeyKeepScreenAlwaysOn: String = "KeepScreenAlwaysOn"
 
 let kDefaultsKeyShowScaleBar: String = "ShowScaleBar"
 
+/// Key on Defaults for the auto-save counter (auto-increment filename on re-save).
+let kDefaultsKeyAutoSaveCounter: String = "AutoSaveCounter"
+
 /// A class to handle app preferences in one single place.
 /// When the app starts for the first time the following preferences are set:
 ///
@@ -96,6 +99,9 @@ class Preferences: NSObject {
 
     ///
     private var _showScaleBar: Bool = true
+
+    /// In memory value of the auto-save counter preference (default: true).
+    private var _autoSaveCounter: Bool = true
 
     /// UserDefaults.standard shortcut
     private let defaults = UserDefaults.standard
@@ -182,6 +188,12 @@ class Preferences: NSObject {
         if let showScaleBarBool = defaults.object(forKey: kDefaultsKeyShowScaleBar) as? Bool {
             _showScaleBar = showScaleBarBool
             print("** Preferences:: loaded preference from defaults showScaleBar \(showScaleBarBool)")
+        }
+
+        // load auto-save counter preference
+        if let autoSaveCounterBool = defaults.object(forKey: kDefaultsKeyAutoSaveCounter) as? Bool {
+            _autoSaveCounter = autoSaveCounterBool
+            print("** Preferences:: loaded preference from defaults autoSaveCounter \(autoSaveCounterBool)")
         }
 
     }
@@ -334,6 +346,10 @@ class Preferences: NSObject {
             _dateFormatUseEN = useEN
             defaults.set(useEN, forKey: kDefaultsKeyDateFormatUseEN)
         }
+        if let autoSaveCounter = context[kDefaultsKeyAutoSaveCounter] as? Bool {
+            _autoSaveCounter = autoSaveCounter
+            defaults.set(autoSaveCounter, forKey: kDefaultsKeyAutoSaveCounter)
+        }
     }
 
     /// Sends current preferences to Apple Watch via WCSession applicationContext.
@@ -346,7 +362,8 @@ class Preferences: NSObject {
         let context: [String: Any] = [
             kDefaultsKeyDateFormat: _dateFormat,
             kDefaultsKeyDateFormatUseUTC: _dateFormatUseUTC,
-            kDefaultsKeyDateFormatUseEN: _dateFormatUseEN
+            kDefaultsKeyDateFormatUseEN: _dateFormatUseEN,
+            kDefaultsKeyAutoSaveCounter: _autoSaveCounter
         ]
         do {
             try session.updateApplicationContext(context)
@@ -378,6 +395,19 @@ class Preferences: NSObject {
             _showScaleBar = newValue
             defaults.set(newValue, forKey: kDefaultsKeyShowScaleBar)
             print("** Preferences:: setting showScaleBar: \(newValue)")
+        }
+    }
+
+    /// Get and sets whether to auto-increment the filename counter on re-save.
+    var autoSaveCounter: Bool {
+        get {
+            return _autoSaveCounter
+        }
+        set {
+            _autoSaveCounter = newValue
+            defaults.set(newValue, forKey: kDefaultsKeyAutoSaveCounter)
+            print("** Preferences:: setting autoSaveCounter: \(newValue)")
+            syncSettingsToWatch()
         }
     }
 

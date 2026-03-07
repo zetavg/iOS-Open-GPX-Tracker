@@ -40,6 +40,7 @@
 "SCREEN" = "Screen";
 "KEEP_SCREEN_ALWAYS_ON" = "Keep screen always on?";
 "SHOW_SCALE_BAR" = "Display the scale bar?";
+"AUTO_SAVE_COUNTER" = "Auto-increment filename on re-save?";
 "CACHE" = "Cache";
 "CALCULATING" = "Calculating...";
 "MAP_SOURCE" = "Map Source";

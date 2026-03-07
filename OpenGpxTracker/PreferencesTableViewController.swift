@@ -43,6 +43,9 @@ let kKeepScreenAlwaysOnCell = 0
 /// Cell Id of the showScaleBar in ScreenSection
 let kShowScaleBarCell = 1
 
+/// Cell Id of the autoSaveCounter in ScreenSection
+let kAutoSaveCounterCell = 2
+
 /// Cell Id for Use offline cache in CacheSection of PreferencesTableViewController
 let kUseOfflineCacheCell = 0
 
@@ -157,7 +160,7 @@ class PreferencesTableViewController: UITableViewController, UINavigationBarDele
         case kActivityTypeSection: return CLActivityType.count
         case kDefaultNameSection: return 1
         case kGPXFilesLocationSection: return 1
-        case kScreenSection: return 2
+        case kScreenSection: return 3
         default: fatalError("Unknown section")
         }
     }
@@ -220,6 +223,11 @@ class PreferencesTableViewController: UITableViewController, UINavigationBarDele
         case kShowScaleBarCell:
             cell.textLabel?.text = NSLocalizedString("SHOW_SCALE_BAR", comment: "no comment")
             if preferences.showScaleBar {
+                cell.accessoryType = .checkmark
+            }
+        case kAutoSaveCounterCell:
+            cell.textLabel?.text = NSLocalizedString("AUTO_SAVE_COUNTER", comment: "no comment")
+            if preferences.autoSaveCounter {
                 cell.accessoryType = .checkmark
             }
         default:
@@ -344,6 +352,11 @@ class PreferencesTableViewController: UITableViewController, UINavigationBarDele
                 tableView.cellForRow(at: indexPath)?.accessoryType = newShowScaleBar ? .checkmark : .none
                 // Notify the map
                 self.delegate?.didUpdateShowScaleBar(newShowScaleBar)
+            case kAutoSaveCounterCell:
+                let newAutoSaveCounter = !preferences.autoSaveCounter
+                preferences.autoSaveCounter = newAutoSaveCounter
+                print("PreferencesTableViewController: toggle auto-save counter to \(newAutoSaveCounter)")
+                tableView.cellForRow(at: indexPath)?.accessoryType = newAutoSaveCounter ? .checkmark : .none
             default:
                 fatalError("didSelectRowAt: Unknown cell")
             }
