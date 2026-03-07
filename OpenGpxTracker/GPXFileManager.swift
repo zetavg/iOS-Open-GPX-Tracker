@@ -68,7 +68,31 @@ class GPXFileManager: NSObject {
         let fileURL = self.URLForFilename(filename)
         return FileManager.default.fileExists(atPath: fileURL.path)
     }
-    
+
+    /// Returns the next available filename by appending a counter suffix (-1, -2, etc.).
+    /// Strips any existing counter suffix before incrementing, so `track-2` becomes `track-3` (not `track-2-1`).
+    ///
+    /// - Parameters:
+    ///     - basename: the base filename without extension (e.g. "my-track" or "my-track-2")
+    /// - Returns: the next available filename with counter suffix, without extension
+    class func nextAvailableFilename(for basename: String) -> String {
+        // Strip any existing counter suffix to get the root name.
+        let rootName: String
+        if let dashRange = basename.range(of: "-", options: .backwards),
+           let _ = Int(basename[dashRange.upperBound...]) {
+            rootName = String(basename[basename.startIndex..<dashRange.lowerBound])
+        } else {
+            rootName = basename
+        }
+        var counter = 1
+        var candidate = "\(rootName)-\(counter)"
+        while fileExists(candidate) {
+            counter += 1
+            candidate = "\(rootName)-\(counter)"
+        }
+        return candidate
+    }
+
     ///
     /// Saves the GPX contents to the specified URL
     /// - Parameters:

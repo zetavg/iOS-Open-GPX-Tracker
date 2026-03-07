@@ -273,7 +273,9 @@ class InterfaceController: WKInterfaceController {
     ///
     /// Save Button was tapped.
     ///
-    /// Saves current track and waypoints as a GPX file, with a default filename of date and time.
+    /// If auto-save counter is enabled and the track was previously saved,
+    /// it automatically saves with a counter suffix (e.g. `-1`, `-2`, etc.).
+    /// Otherwise saves with the default filename.
     ///
     @IBAction func saveButtonTapped() {
         print("save Button tapped")
@@ -281,7 +283,14 @@ class InterfaceController: WKInterfaceController {
         if (gpxTrackingStatus == .notStarted) && !self.hasWaypoints {
             return
         }
-        let filename = defaultFilename()
+
+        let filename: String
+        if preferences.autoSaveCounter && !lastGpxFilename.isEmpty {
+            filename = GPXFileManager.nextAvailableFilename(for: lastGpxFilename)
+        } else {
+            filename = defaultFilename()
+        }
+
         let gpxString = self.map.exportToGPXString()
         GPXFileManager.save(filename, gpxContents: gpxString)
         self.lastGpxFilename = filename
