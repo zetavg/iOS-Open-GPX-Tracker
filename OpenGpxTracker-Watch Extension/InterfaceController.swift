@@ -189,6 +189,7 @@ class InterfaceController: WKInterfaceController {
                 self.stopWatch.stop()
                 // start new track segment
                 self.map.startNewTrackSegment()
+                WatchSessionRecovery.shared.appendSegmentBreak()
                 // Tell the map view to promote the current segment to completed
                 if #available(watchOS 10.0, *) {
                     TrackingState.shared.finalizeCurrentSegment()
@@ -312,6 +313,7 @@ class InterfaceController: WKInterfaceController {
             print("Adding waypoint at \(currentCoordinates)")
             self.hasWaypoints = true
             self.hasUnsavedChanges = true
+            WatchSessionRecovery.shared.appendWaypoint(coordinate: currentCoordinates, altitude: altitude)
             persistSessionForRecovery(force: true)
             WKInterfaceDevice.current().play(.directionUp)
             newPinButton.setTitle("✓")
@@ -589,6 +591,7 @@ extension InterfaceController: CLLocationManagerDelegate {
             print("didUpdateLocation: adding point to track (\(newLocation.coordinate.latitude),\(newLocation.coordinate.longitude))")
             map.addPointToCurrentTrackSegmentAtLocation(newLocation)
             hasUnsavedChanges = true
+            WatchSessionRecovery.shared.appendTrackPoint(newLocation)
             let distStr = map.totalTrackedDistance.toDistance(useImperial: preferences.useImperial)
             totalTrackedDistanceLabel.setText(distStr)
             persistSessionForRecovery(force: false)
@@ -627,16 +630,16 @@ extension InterfaceController {
             lastPersistTime = Date()
         }
 
-        WatchSessionRecovery.save(
-            session: map,
+        let metadata = WatchSessionRecovery.RecoveryMetadata(
             trackStartDate: trackStartDate,
             elapsedTime: stopWatch.elapsedTime,
-            isTracking: gpxTrackingStatus == .tracking,
+            wasTracking: gpxTrackingStatus == .tracking,
             gpxFilenameSaveBase: gpxFilenameSaveBase,
             lastGpxFilename: lastGpxFilename,
             hasWaypoints: hasWaypoints,
             hasUnsavedChanges: hasUnsavedChanges
         )
+        WatchSessionRecovery.shared.flush(metadata: metadata)
     }
 
     /// On launch, check for a recovery file and restore the session in paused state.
