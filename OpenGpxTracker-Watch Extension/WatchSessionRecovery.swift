@@ -83,6 +83,8 @@ class WatchSessionRecovery {
         var lastGpxFilename: String
         /// Whether the session had any waypoints.
         var hasWaypoints: Bool
+        /// Whether there were unsaved changes at the time of the persist.
+        var hasUnsavedChanges: Bool
     }
 
     // MARK: - Append (memory only, no I/O)

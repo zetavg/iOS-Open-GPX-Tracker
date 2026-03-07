@@ -1,7 +1,7 @@
 /*
  Localizable.strings
  OpenGpxTracker
- 
+
  Created by Paolo Fehlmann on 19.05.21.
  */
 
@@ -28,6 +28,7 @@
 "LAST_SAVED" = "%@ (%@) ultimo salvataggio";
 "DELETE" = "Eliminare";
 "SELECT_OPTION" = "Scegliere";
+"RESET_UNSAVED_CHANGES" = "Ci sono modifiche non salvate che andranno perse.";
 "LOAD_IN_MAP" = "Caricare nella mappa";
 "SHARE" = "Condividere";
 "LOADING_FILE" = "Caricare Documento GPX...";
