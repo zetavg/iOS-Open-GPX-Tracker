@@ -315,11 +315,6 @@ class InterfaceController: WKInterfaceController {
     @IBAction func resetButtonTapped() {
 
         let cancelOption = WKAlertAction(title: NSLocalizedString("CANCEL", comment: "no comment"), style: .cancel) {}
-        let saveAndStartOption = WKAlertAction(title: NSLocalizedString("SAVE_START_NEW", comment: "no comment"), style: .default) {
-            self.saveButtonTapped()
-            self.gpxTrackingStatus = .notStarted
-            WatchSessionRecovery.clear()
-        }
         let deleteOption = WKAlertAction(title: NSLocalizedString("RESET", comment: "no comment"), style: .destructive) {
             self.gpxTrackingStatus = .notStarted
             WatchSessionRecovery.clear()
@@ -328,7 +323,7 @@ class InterfaceController: WKInterfaceController {
         presentAlert(withTitle: nil,
                      message: NSLocalizedString("SELECT_OPTION", comment: "no comment"),
                      preferredStyle: .actionSheet,
-                     actions: [cancelOption, saveAndStartOption, deleteOption])
+                     actions: [cancelOption, deleteOption])
     }
 
     /// returns a string with the format based on user preferences (matching iOS app behavior)
