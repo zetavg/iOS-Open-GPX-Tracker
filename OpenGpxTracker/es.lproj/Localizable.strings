@@ -1,7 +1,7 @@
 /*
  Localizable.strings
  OpenGpxTracker
- 
+
  Created by Merlos on 25.08.19.
  */
 
@@ -29,6 +29,7 @@
 "LAST_SAVED" = "Guardado %@ (%@)";
 "DELETE" = "Borrar";
 "SELECT_OPTION" = "Selecciona una opción";
+"RESET_UNSAVED_CHANGES" = "Tienes cambios sin guardar que se perderán.";
 "LOAD_IN_MAP" = "Cargar en el mapa";
 "SHARE" = "Compartir";
 "LOADING_FILE" = "Cargando ...";

@@ -29,6 +29,7 @@ Created by Phiilman on 28.03.20.
 "LAST_SAVED" = "Viimeksi tallennettu %@ (%@)";
 "DELETE" = "Poista";
 "SELECT_OPTION" = "Valitse asetus";
+"RESET_UNSAVED_CHANGES" = "Sinulla on tallentamattomia muutoksia, jotka menetetään.";
 "LOAD_IN_MAP" = "Lataa kartalle";
 "SHARE" = "Jaa";
 "LOADING_FILE" = "Lataa GPX tiedostoa";
@@ -38,7 +39,7 @@ Created by Phiilman on 28.03.20.
 "PREFERENCES" = "Asetukset";
 "UNITS" = "Yksiköt";
 "CACHE" = "Välimuisti";
-"CALCULATING" = "Lasketaan..."; 
+"CALCULATING" = "Lasketaan...";
 "SCREEN" = "Näyttö";
 "KEEP_SCREEN_ALWAYS_ON" = "Pidä näyttö aina päällä?";
 "SHOW_SCALE_BAR" = "Näytä mittakaavapalkki aina?";
