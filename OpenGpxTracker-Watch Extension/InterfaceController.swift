@@ -53,6 +53,7 @@ let kSignalAccuracy1 = 201.0
 class InterfaceController: WKInterfaceController {
 
     @IBOutlet var newPinButton: WKInterfaceButton!
+    private var pinResetWorkItem: DispatchWorkItem?
     @IBOutlet var trackerButton: WKInterfaceButton!
     @IBOutlet var saveButton: WKInterfaceButton!
     @IBOutlet var resetButton: WKInterfaceButton!
@@ -279,6 +280,15 @@ class InterfaceController: WKInterfaceController {
             WatchSessionRecovery.shared.appendWaypoint(coordinate: currentCoordinates, altitude: altitude)
             persistSessionForRecovery(force: true)
             WKInterfaceDevice.current().play(.directionUp)
+            pinResetWorkItem?.cancel()
+            newPinButton.setTitle("✓")
+            newPinButton.setBackgroundColor(kGreenButtonBackgroundColor)
+            let workItem = DispatchWorkItem { [weak self] in
+                self?.newPinButton.setTitle("📍")
+                self?.newPinButton.setBackgroundColor(kWhiteBackgroundColor)
+            }
+            pinResetWorkItem = workItem
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: workItem)
         }
 
     }
