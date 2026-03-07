@@ -50,6 +50,8 @@ class WatchSessionRecovery {
         var elapsedTime: TimeInterval
         /// Whether tracking was active (true) or paused (false) when saved.
         var wasTracking: Bool
+        /// The original base filename chosen by the user (without counter suffixes).
+        var gpxFilenameSaveBase: String
         /// The last GPX filename used for a user-initiated save (may be empty).
         var lastGpxFilename: String
         /// Whether the session had any waypoints.
@@ -68,6 +70,7 @@ class WatchSessionRecovery {
     ///   - trackStartDate: The date/time when tracking was first started.
     ///   - elapsedTime: Current stopwatch elapsed time in seconds.
     ///   - isTracking: Whether the app is currently in `.tracking` status.
+    ///   - gpxFilenameSaveBase: The original base filename chosen by the user.
     ///   - lastGpxFilename: The last saved GPX filename (may be empty).
     ///   - hasWaypoints: Whether the session contains waypoints.
     ///
@@ -75,6 +78,7 @@ class WatchSessionRecovery {
                      trackStartDate: Date?,
                      elapsedTime: TimeInterval,
                      isTracking: Bool,
+                     gpxFilenameSaveBase: String,
                      lastGpxFilename: String,
                      hasWaypoints: Bool) {
 
@@ -96,6 +100,7 @@ class WatchSessionRecovery {
         let meta = RecoveryMetadata(trackStartDate: trackStartDate,
                                     elapsedTime: elapsedTime,
                                     wasTracking: isTracking,
+                                    gpxFilenameSaveBase: gpxFilenameSaveBase,
                                     lastGpxFilename: lastGpxFilename,
                                     hasWaypoints: hasWaypoints)
         if let data = try? JSONEncoder().encode(meta) {
