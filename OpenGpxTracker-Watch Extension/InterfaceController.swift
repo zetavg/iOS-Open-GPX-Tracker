@@ -159,9 +159,8 @@ class InterfaceController: WKInterfaceController {
                 // Sync cleared state to SwiftUI map
                 if #available(watchOS 10.0, *) {
                     let ts = TrackingState.shared
-                    ts.totalDistanceString = distStr
-                    ts.elapsedTimeString = stopWatch.elapsedTimeString
-                    ts.updateFromSession(map)
+                    ts.clearAll()
+                    ts.updateDisplayStrings(elapsed: stopWatch.elapsedTimeString, distance: distStr)
                 }
 
             case .tracking:
@@ -191,6 +190,10 @@ class InterfaceController: WKInterfaceController {
                 self.stopWatch.stop()
                 // start new track segment
                 self.map.startNewTrackSegment()
+                // Tell the map view to promote the current segment to completed
+                if #available(watchOS 10.0, *) {
+                    TrackingState.shared.finalizeCurrentSegment()
+                }
                 WatchSessionRecovery.shared.appendSegmentBreak()
             }
         }
@@ -227,9 +230,17 @@ class InterfaceController: WKInterfaceController {
             trackingState.addWaypointAction = { [weak self] in
                 self?.addPinAtMyLocation()
             }
-            // Push initial distance
-            trackingState.totalDistanceString = map.totalTrackedDistance.toDistance(useImperial: preferences.useImperial)
-            trackingState.updateFromSession(map)
+            trackingState.performFullSync = { [weak self] in
+                guard let self = self else { return }
+                trackingState.fullSyncFromSession(self.map)
+            }
+            // Store initial display strings (will be applied on map open)
+            trackingState.updateDisplayStrings(
+                elapsed: stopWatch.elapsedTimeString,
+                distance: map.totalTrackedDistance.toDistance(useImperial: preferences.useImperial)
+            )
+            // Mark that a full sync is needed when the map is first opened
+            trackingState.needsFullSync = true
         }
     }
 
@@ -315,9 +326,9 @@ class InterfaceController: WKInterfaceController {
             }
             pinResetWorkItem = workItem
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: workItem)
-            // Sync waypoints to the SwiftUI map
+            // Sync new waypoint to the SwiftUI map (O(1) append)
             if #available(watchOS 10.0, *) {
-                TrackingState.shared.updateFromSession(map)
+                TrackingState.shared.appendWaypoint(currentCoordinates)
             }
         }
 
@@ -503,7 +514,7 @@ extension InterfaceController: StopWatchDelegate {
     func stopWatch(_ stropWatch: StopWatch, didUpdateElapsedTimeString elapsedTimeString: String) {
         timeLabel.setText(elapsedTimeString)
         if #available(watchOS 10.0, *) {
-            TrackingState.shared.elapsedTimeString = elapsedTimeString
+            TrackingState.shared.updateDisplayStrings(elapsed: elapsedTimeString)
         }
     }
 }
@@ -573,10 +584,9 @@ extension InterfaceController: CLLocationManagerDelegate {
         // Update speed (provided in m/s, but displayed in km/h)
         speedLabel.setText(newLocation.speed.toSpeed(useImperial: preferences.useImperial))
 
-        // Push location & course to the SwiftUI map view
+        // Push location to the SwiftUI map view (gated behind visibility)
         if #available(watchOS 10.0, *) {
-            let ts = TrackingState.shared
-            ts.currentLocation = newLocation
+            TrackingState.shared.updateLocation(newLocation)
         }
 
         if gpxTrackingStatus == .tracking {
@@ -588,11 +598,11 @@ extension InterfaceController: CLLocationManagerDelegate {
             totalTrackedDistanceLabel.setText(distStr)
             persistSessionForRecovery(force: false)
 
-            // Sync track state to the SwiftUI map
+            // Incremental sync to the SwiftUI map (O(1) append, visibility-gated)
             if #available(watchOS 10.0, *) {
                 let ts = TrackingState.shared
-                ts.totalDistanceString = distStr
-                ts.updateFromSession(map)
+                ts.updateDisplayStrings(distance: distStr)
+                ts.appendTrackPoint(newLocation.coordinate)
             }
         }
     }
@@ -668,12 +678,15 @@ extension InterfaceController {
         stopWatch.tmpElapsedTime = recovered.metadata.elapsedTime
         timeLabel.setText(stopWatch.elapsedTimeString)
 
-        // Sync recovered data to the SwiftUI map view
+        // Buffer recovered display strings for the SwiftUI map view.
+        // The actual full sync will happen when the map is opened.
         if #available(watchOS 10.0, *) {
             let ts = TrackingState.shared
-            ts.elapsedTimeString = stopWatch.elapsedTimeString
-            ts.totalDistanceString = map.totalTrackedDistance.toDistance(useImperial: preferences.useImperial)
-            ts.updateFromSession(map)
+            ts.updateDisplayStrings(
+                elapsed: stopWatch.elapsedTimeString,
+                distance: map.totalTrackedDistance.toDistance(useImperial: preferences.useImperial)
+            )
+            ts.needsFullSync = true
         }
 
         print("InterfaceController:: session recovered with \(recovered.gpxRoot.tracks.count) track(s), \(recovered.gpxRoot.waypoints.count) waypoint(s), elapsed: \(recovered.metadata.elapsedTime)s")
