@@ -65,6 +65,11 @@
                             <variation key="device=watch42mm" height="174"/>
                             <variation key="device=watch44mm" height="190"/>
                         </group>
+                        <button width="1" alignment="left" title="🗺 Map" id="WMP-bt-001" userLabel="Map Button">
+                            <connections>
+                                <action selector="openMapTapped" destination="AgC-eL-Hgc" id="WMP-ac-001"/>
+                            </connections>
+                        </button>
                         <group width="1" alignment="left" layout="vertical" id="qC3-2k-9N7" userLabel="Second Page">
                             <items>
                                 <group width="1" alignment="center" id="EN6-a8-HHf" userLabel="Signal Group">
@@ -232,6 +237,13 @@
                 <controller id="eXb-UN-Cd0" customClass="NotificationController" customModule="OpenGpxTracker_Watch" customModuleProvider="target"/>
             </objects>
             <point key="canvasLocation" x="468" y="345"/>
+        </scene>
+        <!--Map Interface Controller-->
+        <scene sceneID="WMP-sc-001">
+            <objects>
+                <controller identifier="MapInterfaceController" id="WMP-ct-001" customClass="MapInterfaceController" customModule="OpenGpxTracker_Watch_Extension"/>
+            </objects>
+            <point key="canvasLocation" x="5" y="-150"/>
         </scene>
     </scenes>
     <color key="tintColor" red="1" green="0.92156862745098034" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>

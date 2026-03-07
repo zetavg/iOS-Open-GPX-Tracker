@@ -10,6 +10,9 @@
 		0175ABFF23F014C7003323C3 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 0175AC0123F014C7003323C3 /* LaunchScreen.storyboard */; };
 		120DE71022B274910055C4CB /* GPXSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 120DE70F22B274910055C4CB /* GPXSession.swift */; };
 		120DE71122B274A40055C4CB /* GPXSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 120DE70F22B274910055C4CB /* GPXSession.swift */; };
+		AA00010127000000000000A1 /* TrackingState.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00010127000000000000B1 /* TrackingState.swift */; };
+		AA00010127000000000000A2 /* WatchMapContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00010127000000000000B2 /* WatchMapContentView.swift */; };
+		AA00010127000000000000A3 /* MapInterfaceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00010127000000000000B3 /* MapInterfaceController.swift */; };
 		12491EA328D7057D009F6BE1 /* MKMapView+ConvenientOverlayInserts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12491EA228D7057D009F6BE1 /* MKMapView+ConvenientOverlayInserts.swift */; };
 		12A1A44424D561AC0057ED7A /* CoreDataHelper+FetchRequests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12A1A44324D561AC0057ED7A /* CoreDataHelper+FetchRequests.swift */; };
 		4588D66B230D23AA009AA75F /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 4588D66D230D23AA009AA75F /* InfoPlist.strings */; };
@@ -263,6 +266,9 @@
 		BF692F6A2209AAFB00F8A0F1 /* ExtensionDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtensionDelegate.swift; sourceTree = "<group>"; };
 		BF692F6C2209AAFB00F8A0F1 /* ComplicationController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComplicationController.swift; sourceTree = "<group>"; };
 		C1A2B3C42826A00100FACADE /* WatchSessionRecovery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchSessionRecovery.swift; sourceTree = "<group>"; };
+		AA00010127000000000000B1 /* TrackingState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackingState.swift; sourceTree = "<group>"; };
+		AA00010127000000000000B2 /* WatchMapContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchMapContentView.swift; sourceTree = "<group>"; };
+		AA00010127000000000000B3 /* MapInterfaceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapInterfaceController.swift; sourceTree = "<group>"; };
 		BF692F6E2209AAFC00F8A0F1 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		BF692F702209AAFC00F8A0F1 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		BF9AE57B2410011D00B103A0 /* DefaultNameSetupViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DefaultNameSetupViewController.swift; sourceTree = "<group>"; };
@@ -511,6 +517,9 @@
 				BF692F6A2209AAFB00F8A0F1 /* ExtensionDelegate.swift */,
 				BF692F6C2209AAFB00F8A0F1 /* ComplicationController.swift */,
 				C1A2B3C42826A00100FACADE /* WatchSessionRecovery.swift */,
+				AA00010127000000000000B1 /* TrackingState.swift */,
+				AA00010127000000000000B2 /* WatchMapContentView.swift */,
+				AA00010127000000000000B3 /* MapInterfaceController.swift */,
 				BF692F6E2209AAFC00F8A0F1 /* Assets.xcassets */,
 				BF692F702209AAFC00F8A0F1 /* Info.plist */,
 				4588D671230D2476009AA75F /* InfoPlist.strings */,
@@ -823,6 +832,9 @@
 				BF9AE5802410012700B103A0 /* DefaultDateFormat.swift in Sources */,
 				BFE026C8244A0160005423E6 /* String+CountInstances.swift in Sources */,
 				C1A2B3C52826A00100FACADE /* WatchSessionRecovery.swift in Sources */,
+				AA00010127000000000000A1 /* TrackingState.swift in Sources */,
+				AA00010127000000000000A2 /* WatchMapContentView.swift in Sources */,
+				AA00010127000000000000A3 /* MapInterfaceController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
