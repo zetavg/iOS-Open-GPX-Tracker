@@ -338,11 +338,12 @@ class InterfaceController: WKInterfaceController {
             self.gpxTrackingStatus = .notStarted
             WatchSessionRecovery.clear()
         }
+        let dismissOption = WKAlertAction(title: NSLocalizedString("CANCEL", comment: "no comment"), style: .default) {}
 
         presentAlert(withTitle: nil,
                      message: NSLocalizedString("RESET_UNSAVED_CHANGES", comment: "no comment"),
                      preferredStyle: .actionSheet,
-                     actions: [cancelOption, deleteOption])
+                     actions: [cancelOption, deleteOption, dismissOption])
     }
 
     /// returns a string with the format based on user preferences (matching iOS app behavior)
