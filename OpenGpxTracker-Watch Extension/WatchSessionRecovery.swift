@@ -56,6 +56,8 @@ class WatchSessionRecovery {
         var lastGpxFilename: String
         /// Whether the session had any waypoints.
         var hasWaypoints: Bool
+        /// Whether there were unsaved changes at the time of the persist.
+        var hasUnsavedChanges: Bool
     }
 
     // MARK: - Save
@@ -73,6 +75,7 @@ class WatchSessionRecovery {
     ///   - gpxFilenameSaveBase: The original base filename chosen by the user.
     ///   - lastGpxFilename: The last saved GPX filename (may be empty).
     ///   - hasWaypoints: Whether the session contains waypoints.
+    ///   - hasUnsavedChanges: Whether there are changes not yet saved to a GPX file.
     ///
     static func save(session: GPXSession,
                      trackStartDate: Date?,
@@ -80,7 +83,8 @@ class WatchSessionRecovery {
                      isTracking: Bool,
                      gpxFilenameSaveBase: String,
                      lastGpxFilename: String,
-                     hasWaypoints: Bool) {
+                     hasWaypoints: Bool,
+                     hasUnsavedChanges: Bool) {
 
         // Ensure the recovery directory exists.
         let fm = FileManager.default
@@ -102,7 +106,8 @@ class WatchSessionRecovery {
                                     wasTracking: isTracking,
                                     gpxFilenameSaveBase: gpxFilenameSaveBase,
                                     lastGpxFilename: lastGpxFilename,
-                                    hasWaypoints: hasWaypoints)
+                                    hasWaypoints: hasWaypoints,
+                                    hasUnsavedChanges: hasUnsavedChanges)
         if let data = try? JSONEncoder().encode(meta) {
             try? data.write(to: recoveryMetadataURL, options: .atomic)
         }

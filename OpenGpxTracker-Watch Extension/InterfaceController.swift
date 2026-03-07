@@ -103,6 +103,9 @@ class InterfaceController: WKInterfaceController {
         }
     }
 
+    /// Whether the session has data that hasn't been saved to a GPX file yet.
+    var hasUnsavedChanges: Bool = false
+
     // Signal accuracy images
     let signalImage0 = UIImage(named: "signal0")
     let signalImage1 = UIImage(named: "signal1")
@@ -146,6 +149,7 @@ class InterfaceController: WKInterfaceController {
                 trackStartDate = nil // Clear track start date
                 gpxFilenameSaveBase = "" // Clear base filename
                 lastGpxFilename = "" // Clear last filename, so when saving it appears an empty field
+                hasUnsavedChanges = false
 
                 totalTrackedDistanceLabel.setText(map.totalTrackedDistance.toDistance(useImperial: preferences.useImperial))
 
@@ -267,6 +271,7 @@ class InterfaceController: WKInterfaceController {
             map.addWaypoint(waypoint)
             print("Adding waypoint at \(currentCoordinates)")
             self.hasWaypoints = true
+            self.hasUnsavedChanges = true
             persistSessionForRecovery(force: true)
         }
 
@@ -300,6 +305,7 @@ class InterfaceController: WKInterfaceController {
             self.gpxFilenameSaveBase = filename
         }
         self.lastGpxFilename = filename
+        self.hasUnsavedChanges = false
         // Re-persist recovery immediately so continued tracking after save is protected.
         // (Clearing alone would leave a window with no recovery file until the next GPS update.)
         persistSessionForRecovery(force: true)
@@ -320,6 +326,13 @@ class InterfaceController: WKInterfaceController {
     ///
     @IBAction func resetButtonTapped() {
 
+        // If there are no unsaved changes, reset immediately without confirmation.
+        guard hasUnsavedChanges else {
+            self.gpxTrackingStatus = .notStarted
+            WatchSessionRecovery.clear()
+            return
+        }
+
         let cancelOption = WKAlertAction(title: NSLocalizedString("CANCEL", comment: "no comment"), style: .cancel) {}
         let deleteOption = WKAlertAction(title: NSLocalizedString("RESET", comment: "no comment"), style: .destructive) {
             self.gpxTrackingStatus = .notStarted
@@ -327,7 +340,7 @@ class InterfaceController: WKInterfaceController {
         }
 
         presentAlert(withTitle: nil,
-                     message: NSLocalizedString("SELECT_OPTION", comment: "no comment"),
+                     message: NSLocalizedString("RESET_UNSAVED_CHANGES", comment: "no comment"),
                      preferredStyle: .actionSheet,
                      actions: [cancelOption, deleteOption])
     }
@@ -486,6 +499,7 @@ extension InterfaceController: CLLocationManagerDelegate {
         if gpxTrackingStatus == .tracking {
             print("didUpdateLocation: adding point to track (\(newLocation.coordinate.latitude),\(newLocation.coordinate.longitude))")
             map.addPointToCurrentTrackSegmentAtLocation(newLocation)
+            hasUnsavedChanges = true
             totalTrackedDistanceLabel.setText(map.totalTrackedDistance.toDistance(useImperial: preferences.useImperial))
             persistSessionForRecovery(force: false)
         }
@@ -523,7 +537,8 @@ extension InterfaceController {
             isTracking: gpxTrackingStatus == .tracking,
             gpxFilenameSaveBase: gpxFilenameSaveBase,
             lastGpxFilename: lastGpxFilename,
-            hasWaypoints: hasWaypoints
+            hasWaypoints: hasWaypoints,
+            hasUnsavedChanges: hasUnsavedChanges
         )
     }
 
@@ -556,6 +571,7 @@ extension InterfaceController {
         // Since startedTime is 0 on a fresh StopWatch, that would produce a huge value.
         // So we set the correct tmpElapsedTime AFTER the .paused assignment.
         gpxTrackingStatus = .paused
+        hasUnsavedChanges = recovered.metadata.hasUnsavedChanges
         stopWatch.tmpElapsedTime = recovered.metadata.elapsedTime
         timeLabel.setText(stopWatch.elapsedTimeString)
 

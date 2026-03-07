@@ -1,7 +1,7 @@
 /*
  Localizable.strings
  OpenGpxTracker
- 
+
  #201
  Brazilian Portuguese translation by @renatofelixalmeida, submitted on 11/05/21.
  */
@@ -30,6 +30,7 @@
 "LAST_SAVED" = "Salvo pela última vez %@ (%@)";
 "DELETE" = "Apagar";
 "SELECT_OPTION" = "Selecione uma opção";
+"RESET_UNSAVED_CHANGES" = "Você tem alterações não salvas que serão perdidas.";
 "LOAD_IN_MAP" = "Abrir no mapa";
 "SHARE" = "Compartilhar";
 "LOADING_FILE" = "Abrindo arquivo GPX...";
