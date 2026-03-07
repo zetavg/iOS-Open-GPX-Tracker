@@ -71,6 +71,8 @@ class WatchSessionRecovery {
 
     /// Lightweight metadata saved alongside the journal.
     struct RecoveryMetadata: Codable {
+        /// The date/time when tracking was first started (nil if never started).
+        var trackStartDate: Date?
         /// Elapsed stopwatch time in seconds at the moment of the last save.
         var elapsedTime: TimeInterval
         /// Whether tracking was active (true) or paused (false) when saved.
