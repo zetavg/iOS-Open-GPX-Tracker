@@ -77,6 +77,8 @@ class WatchSessionRecovery {
         var elapsedTime: TimeInterval
         /// Whether tracking was active (true) or paused (false) when saved.
         var wasTracking: Bool
+        /// The base filename used for the initial save.
+        var gpxFilenameSaveBase: String
         /// The last GPX filename used for a user-initiated save (may be empty).
         var lastGpxFilename: String
         /// Whether the session had any waypoints.

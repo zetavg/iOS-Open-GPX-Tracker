@@ -84,6 +84,7 @@ class InterfaceController: WKInterfaceController {
     // Status Vars
     var trackStartDate: Date?
     var stopWatch = StopWatch()
+    var gpxFilenameSaveBase: String = ""
     var lastGpxFilename: String = ""
     var wasSentToBackground: Bool = false // Was the app sent to background
     var isDisplayingLocationServicesDenied: Bool = false
@@ -143,6 +144,7 @@ class InterfaceController: WKInterfaceController {
 
                 map.reset() // Reset gpx logging
                 trackStartDate = nil // Clear track start date
+                gpxFilenameSaveBase = "" // Clear base filename
                 lastGpxFilename = "" // Clear last filename, so when saving it appears an empty field
 
                 totalTrackedDistanceLabel.setText(map.totalTrackedDistance.toDistance(useImperial: preferences.useImperial))
@@ -288,13 +290,17 @@ class InterfaceController: WKInterfaceController {
 
         let filename: String
         if preferences.autoSaveCounter && !lastGpxFilename.isEmpty {
-            filename = GPXFileManager.nextAvailableFilename(for: lastGpxFilename)
+            let base = gpxFilenameSaveBase.isEmpty ? lastGpxFilename : gpxFilenameSaveBase
+            filename = GPXFileManager.nextAvailableFilename(for: base)
         } else {
             filename = defaultFilename()
         }
 
         let gpxString = self.map.exportToGPXString()
         GPXFileManager.save(filename, gpxContents: gpxString)
+        if self.gpxFilenameSaveBase.isEmpty {
+            self.gpxFilenameSaveBase = filename
+        }
         self.lastGpxFilename = filename
         // Re-persist recovery immediately so continued tracking after save is protected.
         // (Clearing alone would leave a window with no recovery file until the next GPS update.)
@@ -523,6 +529,7 @@ extension InterfaceController {
                 trackStartDate: trackStartDate,
                 elapsedTime: stopWatch.elapsedTime,
                 wasTracking: gpxTrackingStatus == .tracking,
+                gpxFilenameSaveBase: gpxFilenameSaveBase,
                 lastGpxFilename: lastGpxFilename,
                 hasWaypoints: hasWaypoints
             )
@@ -546,6 +553,7 @@ extension InterfaceController {
 
         // Restore metadata
         trackStartDate = recovered.metadata.trackStartDate
+        gpxFilenameSaveBase = recovered.metadata.gpxFilenameSaveBase
         lastGpxFilename = recovered.metadata.lastGpxFilename
         hasWaypoints = recovered.metadata.hasWaypoints
 
