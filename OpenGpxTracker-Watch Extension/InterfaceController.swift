@@ -87,6 +87,9 @@ class InterfaceController: WKInterfaceController {
     var wasSentToBackground: Bool = false // Was the app sent to background
     var isDisplayingLocationServicesDenied: Bool = false
 
+    /// Timestamp of the last recovery-file persist, used to throttle writes and save battery.
+    var lastPersistTime: Date = .distantPast
+
     /// Does the 'file' have any waypoint?
     var hasWaypoints: Bool = false {
         /// Whenever it is updated, if it has waypoints it sets the save and reset button
@@ -190,6 +193,9 @@ class InterfaceController: WKInterfaceController {
             speedLabel.setText(kUnknownSpeedText)
             signalImageView.setImage(signalImage0)
         }
+
+        // Attempt crash/force-quit recovery
+        attemptSessionRecovery()
     }
 
     override func willActivate() {
@@ -210,6 +216,11 @@ class InterfaceController: WKInterfaceController {
         // This method is called when watch view controller is no longer visible
         super.didDeactivate()
         print("InterfaceController:: didDeactivate called")
+
+        // Persist session before deactivation as an extra safety net.
+        if gpxTrackingStatus != .notStarted {
+            persistSessionForRecovery(force: true)
+        }
 
         if gpxTrackingStatus != .tracking {
             print("InterfaceController:: didDeactivate will stopUpdatingLocation")
@@ -248,6 +259,7 @@ class InterfaceController: WKInterfaceController {
             map.addWaypoint(waypoint)
             print("Adding waypoint at \(currentCoordinates)")
             self.hasWaypoints = true
+            persistSessionForRecovery(force: true)
         }
 
     }
@@ -267,6 +279,9 @@ class InterfaceController: WKInterfaceController {
         let gpxString = self.map.exportToGPXString()
         GPXFileManager.save(filename, gpxContents: gpxString)
         self.lastGpxFilename = filename
+        // Re-persist recovery immediately so continued tracking after save is protected.
+        // (Clearing alone would leave a window with no recovery file until the next GPS update.)
+        persistSessionForRecovery(force: true)
         // print(gpxString)
 
         /// Just a 'done' button, without
@@ -288,9 +303,11 @@ class InterfaceController: WKInterfaceController {
         let saveAndStartOption = WKAlertAction(title: NSLocalizedString("SAVE_START_NEW", comment: "no comment"), style: .default) {
             self.saveButtonTapped()
             self.gpxTrackingStatus = .notStarted
+            WatchSessionRecovery.clear()
         }
         let deleteOption = WKAlertAction(title: NSLocalizedString("RESET", comment: "no comment"), style: .destructive) {
             self.gpxTrackingStatus = .notStarted
+            WatchSessionRecovery.clear()
         }
 
         presentAlert(withTitle: nil,
@@ -454,6 +471,74 @@ extension InterfaceController: CLLocationManagerDelegate {
             print("didUpdateLocation: adding point to track (\(newLocation.coordinate.latitude),\(newLocation.coordinate.longitude))")
             map.addPointToCurrentTrackSegmentAtLocation(newLocation)
             totalTrackedDistanceLabel.setText(map.totalTrackedDistance.toDistance(useImperial: preferences.useImperial))
+            persistSessionForRecovery(force: false)
         }
+    }
+}
+
+// MARK: - Session Recovery
+
+extension InterfaceController {
+
+    /// How often (in seconds) the recovery file is written during continuous tracking.
+    /// Waypoint additions, saves, and lifecycle events always persist immediately.
+    private static let recoveryPersistInterval: TimeInterval = 60
+
+    /// Persist the current session so it can be recovered after a crash or force-quit.
+    ///
+    /// - Parameter force: When `true`, writes immediately (used for user actions and
+    ///   lifecycle events). When `false`, writes are throttled to at most once per
+    ///   `recoveryPersistInterval` seconds to conserve battery on Apple Watch.
+    func persistSessionForRecovery(force: Bool) {
+        if !force {
+            let now = Date()
+            guard now.timeIntervalSince(lastPersistTime) >= Self.recoveryPersistInterval else {
+                return // skip — too soon since last persist
+            }
+            lastPersistTime = now
+        } else {
+            lastPersistTime = Date()
+        }
+
+        WatchSessionRecovery.save(
+            session: map,
+            elapsedTime: stopWatch.elapsedTime,
+            isTracking: gpxTrackingStatus == .tracking,
+            lastGpxFilename: lastGpxFilename,
+            hasWaypoints: hasWaypoints
+        )
+    }
+
+    /// On launch, check for a recovery file and restore the session in paused state.
+    func attemptSessionRecovery() {
+        guard let recovered = WatchSessionRecovery.recover() else { return }
+
+        print("InterfaceController:: recovering session from previous crash/exit")
+
+        // Restore session data (tracks, waypoints)
+        map.continueFromGPXRoot(recovered.gpxRoot)
+
+        // Restore waypoints that are in the GPXRoot but not yet in the session's waypoints array
+        // (continueFromGPXRoot handles tracks/segments; waypoints need separate handling)
+        for wpt in recovered.gpxRoot.waypoints {
+            map.addWaypoint(wpt)
+        }
+
+        // Restore metadata
+        lastGpxFilename = recovered.metadata.lastGpxFilename
+        hasWaypoints = recovered.metadata.hasWaypoints
+
+        // Update distance display
+        totalTrackedDistanceLabel.setText(map.totalTrackedDistance.toDistance(useImperial: preferences.useImperial))
+
+        // Switch to paused FIRST — the .paused setter calls stopWatch.stop() which
+        // adds (Date.timeIntervalSinceReferenceDate - startedTime) to tmpElapsedTime.
+        // Since startedTime is 0 on a fresh StopWatch, that would produce a huge value.
+        // So we set the correct tmpElapsedTime AFTER the .paused assignment.
+        gpxTrackingStatus = .paused
+        stopWatch.tmpElapsedTime = recovered.metadata.elapsedTime
+        timeLabel.setText(stopWatch.elapsedTimeString)
+
+        print("InterfaceController:: session recovered with \(recovered.gpxRoot.tracks.count) track(s), \(recovered.gpxRoot.waypoints.count) waypoint(s), elapsed: \(recovered.metadata.elapsedTime)s")
     }
 }
