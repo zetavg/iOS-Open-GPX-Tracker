@@ -19,7 +19,11 @@ struct WatchMapContentView: View {
     @State private var position: MapCameraPosition = .automatic
     @State private var followUser: Bool = true
     @State private var cameraDistance: CLLocationDistance = 500
+    /// Guards against treating a programmatic camera move as a user pan.
     @State private var isProgrammaticMove: Bool = false
+    /// Work item for the pending programmatic-move reset, so overlapping
+    /// location updates don't create cascading timers.
+    @State private var programmaticMoveResetWork: DispatchWorkItem?
 
     // MARK: - Body
 
@@ -75,14 +79,7 @@ struct WatchMapContentView: View {
             }
             .onChange(of: state.currentLocation) { _, newLoc in
                 guard followUser, let loc = newLoc else { return }
-                isProgrammaticMove = true
-                position = .camera(MapCamera(
-                    centerCoordinate: loc.coordinate,
-                    distance: cameraDistance
-                ))
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    isProgrammaticMove = false
-                }
+                moveCamera(to: loc.coordinate)
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -90,7 +87,9 @@ struct WatchMapContentView: View {
                     Button {
                         WKInterfaceDevice.current().play(.click)
                         followUser = true
-                        centerOnUser()
+                        if let loc = state.currentLocation {
+                            moveCamera(to: loc.coordinate)
+                        }
                     } label: {
                         Image(systemName: followUser ? "location.fill" : "location")
                     }
@@ -109,21 +108,37 @@ struct WatchMapContentView: View {
             }
         }
         .onAppear {
-            centerOnUser()
+            state.isMapVisible = true
+            // Perform full sync so the map catches up with any points
+            // recorded while it was not visible.
+            if state.needsFullSync {
+                state.performFullSync?()
+            }
+            if let loc = state.currentLocation {
+                moveCamera(to: loc.coordinate)
+            }
+        }
+        .onDisappear {
+            state.isMapVisible = false
         }
     }
 
     // MARK: - Helpers
 
-    private func centerOnUser() {
-        guard let loc = state.currentLocation else { return }
+    /// Move the camera to a coordinate, debouncing the programmatic-move flag
+    /// so overlapping location updates don't create cascading timers.
+    private func moveCamera(to coordinate: CLLocationCoordinate2D) {
+        // Cancel any pending reset from a previous move
+        programmaticMoveResetWork?.cancel()
+
         isProgrammaticMove = true
         position = .camera(MapCamera(
-            centerCoordinate: loc.coordinate,
+            centerCoordinate: coordinate,
             distance: cameraDistance
         ))
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            isProgrammaticMove = false
-        }
+
+        let work = DispatchWorkItem { isProgrammaticMove = false }
+        programmaticMoveResetWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: work)
     }
 }
