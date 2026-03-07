@@ -43,6 +43,9 @@ let kKeepScreenAlwaysOnCell = 0
 /// Cell Id of the showScaleBar in ScreenSection
 let kShowScaleBarCell = 1
 
+/// Cell Id of the autoSaveCounter in ScreenSection
+let kAutoSaveCounterCell = 2
+
 /// Cell Id for Use offline cache in CacheSection of PreferencesTableViewController
 let kUseOfflineCacheCell = 0
 
@@ -58,19 +61,19 @@ let kClearCacheCell = 1
 /// and `kDefaultUseCache`` (Bool)
 ///
 class PreferencesTableViewController: UITableViewController, UINavigationBarDelegate, UIDocumentPickerDelegate {
-    
+
     /// Delegate for this table view controller.
     weak var delegate: PreferencesTableViewControllerDelegate?
-    
+
     /// Global Preferences
     var preferences: Preferences = Preferences.shared
-    
+
     var cache: MapCache = MapCache(withConfig: MapCacheConfig(withUrlTemplate: ""))
-    
+
     // Compute once, better performance for scrolling table view (reuse)
     /// Store cached size for reuse.
     var cachedSize = String()
-    
+
     /// Does the following:
     /// 1. Defines the areas for navBar and the Table view
     /// 2. Sets the title
@@ -80,13 +83,13 @@ class PreferencesTableViewController: UITableViewController, UINavigationBarDele
         let navBarFrame = CGRect(x: 0, y: 0, width: self.view.frame.width, height: 64)
         self.tableView.frame = CGRect(x: navBarFrame.width + 1, y: 0, width: self.view.frame.width, height:
             self.view.frame.height - navBarFrame.height)
-        
+
         self.title = NSLocalizedString("PREFERENCES", comment: "no comment")
         let shareItem = UIBarButtonItem(title: NSLocalizedString("DONE", comment: "no comment"),
                                         style: UIBarButtonItem.Style.plain, target: self,
                                         action: #selector(PreferencesTableViewController.closePreferencesTableViewController))
         self.navigationItem.rightBarButtonItems = [shareItem]
-        
+
         // Set a temporary value for cachedSize
         cachedSize = NSLocalizedString("CALCULATING", comment: "Calculating cache")
         print("PreferencesTableViewConroller: Starting cache calculation")
@@ -103,33 +106,33 @@ class PreferencesTableViewController: UITableViewController, UINavigationBarDele
             }
         }
     }
-    
+
     /// Close this controller.
     @objc func closePreferencesTableViewController() {
         print("closePreferencesTableViewController()")
         self.dismiss(animated: true, completion: { () -> Void in
         })
     }
-    
+
     /// Loads data
     override func viewDidAppear(_ animated: Bool) {
         self.tableView.reloadData()
     }
-    
+
     /// Does nothing for now.
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
-    
+
     // MARK: - Table view data source
-    
+
     /// Returns 4 sections: Units, Cache, Map Source, Activity Type
     override func numberOfSections(in tableView: UITableView?) -> Int {
         // Return the number of sections.
         return 7
     }
-    
+
     /// Returns the title of the existing sections.
     /// Uses `kCacheSection`, `kUnitsSection`, `kMapSourceSection` and `kActivityTypeSection`
     /// for deciding which is the section title
@@ -145,7 +148,7 @@ class PreferencesTableViewController: UITableViewController, UINavigationBarDele
         default: fatalError("Unknown section")
         }
     }
-    
+
     /// For section `kCacheSection` returns 2, for `kUnitsSection` returns 1,
     /// for `kMapSourceSection` returns the number of tile servers defined in `GPXTileServer`,
     /// and for kActivityTypeSection returns `CLActivityType.count`
@@ -157,11 +160,11 @@ class PreferencesTableViewController: UITableViewController, UINavigationBarDele
         case kActivityTypeSection: return CLActivityType.count
         case kDefaultNameSection: return 1
         case kGPXFilesLocationSection: return 1
-        case kScreenSection: return 2
+        case kScreenSection: return 3
         default: fatalError("Unknown section")
         }
     }
-    
+
     /// For `kCacheSection`:
     /// 1. If `indexPath.row` is equal to `kUserOfflineCacheCell`, returns a cell with a checkmark
     /// 2. If `indexPath.row` is equal to `kClearCacheCell`, returns a cell with a red text
@@ -194,7 +197,7 @@ class PreferencesTableViewController: UITableViewController, UINavigationBarDele
             fatalError("Unknown section")
         }
     }
-    
+
     private func cellForUnitsSection(at indexPath: IndexPath) -> UITableViewCell {
         let cell = UITableViewCell(style: .value1, reuseIdentifier: "CacheCell")
         switch indexPath.row {
@@ -208,7 +211,7 @@ class PreferencesTableViewController: UITableViewController, UINavigationBarDele
         }
         return cell
     }
-    
+
     private func cellForScreenSection(at indexPath: IndexPath) -> UITableViewCell {
         let cell = UITableViewCell(style: .value1, reuseIdentifier: "CacheCell")
         switch indexPath.row {
@@ -222,12 +225,17 @@ class PreferencesTableViewController: UITableViewController, UINavigationBarDele
             if preferences.showScaleBar {
                 cell.accessoryType = .checkmark
             }
+        case kAutoSaveCounterCell:
+            cell.textLabel?.text = NSLocalizedString("AUTO_SAVE_COUNTER", comment: "no comment")
+            if preferences.autoSaveCounter {
+                cell.accessoryType = .checkmark
+            }
         default:
             fatalError("Unknown cell")
         }
         return cell
     }
-    
+
     private func cellForCacheSection(at indexPath: IndexPath) -> UITableViewCell {
         let cell: UITableViewCell
         switch indexPath.row {
@@ -247,7 +255,7 @@ class PreferencesTableViewController: UITableViewController, UINavigationBarDele
         }
         return cell
     }
-    
+
     private func cellForMapSourceSection(at indexPath: IndexPath) -> UITableViewCell {
         let cell = UITableViewCell(style: .value1, reuseIdentifier: "MapCell")
         let tileServer = GPXTileServer(rawValue: indexPath.row)
@@ -257,7 +265,7 @@ class PreferencesTableViewController: UITableViewController, UINavigationBarDele
         }
         return cell
     }
-    
+
     private func cellForActivityTypeSection(at indexPath: IndexPath) -> UITableViewCell {
         let cell = UITableViewCell(style: .subtitle, reuseIdentifier: "ActivityCell")
         let activity = CLActivityType(rawValue: indexPath.row + 1)!
@@ -268,7 +276,7 @@ class PreferencesTableViewController: UITableViewController, UINavigationBarDele
         }
         return cell
     }
-    
+
     private func cellForDefaultNameSection(at indexPath: IndexPath) -> UITableViewCell {
         let cell = UITableViewCell(style: .subtitle, reuseIdentifier: "DefaultNameCell")
         let dateFormatter = DefaultDateFormat()
@@ -280,7 +288,7 @@ class PreferencesTableViewController: UITableViewController, UINavigationBarDele
         cell.accessoryType = .disclosureIndicator
         return cell
     }
-    
+
     private func cellForGPXFilesLocationSection(at indexPath: IndexPath) -> UITableViewCell {
         let cell = UITableViewCell(style: .value1, reuseIdentifier: "GPXFilesLocation")
         if let url = preferences.gpxFilesFolderURL {
@@ -291,7 +299,7 @@ class PreferencesTableViewController: UITableViewController, UINavigationBarDele
         cell.accessoryType = .disclosureIndicator
         return cell
     }
-    
+
     /// Performs the following actions depending on the section and row selected:
     /// If the cell `kUseImperialUnitCell` in `kUnitsSection`it sets or unsets the use of imperial
     /// units (`useImperial` in `Preferences``and calls the delegate method `didUpdateUseImperial`.
@@ -310,7 +318,7 @@ class PreferencesTableViewController: UITableViewController, UINavigationBarDele
     /// In each case checks or unchecks the corresponding cell in the UI.
     ///
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        
+
         if indexPath.section == kUnitsSection {
             switch indexPath.row {
             case kUseImperialUnitsCell:
@@ -325,7 +333,7 @@ class PreferencesTableViewController: UITableViewController, UINavigationBarDele
                 fatalError("didSelectRowAt: Unknown cell")
             }
         }
-        
+
         if indexPath.section == kScreenSection {
             switch indexPath.row {
             case kKeepScreenAlwaysOnCell:
@@ -344,11 +352,16 @@ class PreferencesTableViewController: UITableViewController, UINavigationBarDele
                 tableView.cellForRow(at: indexPath)?.accessoryType = newShowScaleBar ? .checkmark : .none
                 // Notify the map
                 self.delegate?.didUpdateShowScaleBar(newShowScaleBar)
+            case kAutoSaveCounterCell:
+                let newAutoSaveCounter = !preferences.autoSaveCounter
+                preferences.autoSaveCounter = newAutoSaveCounter
+                print("PreferencesTableViewController: toggle auto-save counter to \(newAutoSaveCounter)")
+                tableView.cellForRow(at: indexPath)?.accessoryType = newAutoSaveCounter ? .checkmark : .none
             default:
                 fatalError("didSelectRowAt: Unknown cell")
             }
         }
-        
+
         if indexPath.section == kCacheSection {  // 0 -> sets and unsets cache
             switch indexPath.row {
             case kUseOfflineCacheCell:
@@ -376,40 +389,40 @@ class PreferencesTableViewController: UITableViewController, UINavigationBarDele
                 fatalError("didSelectRowAt: Unknown cell")
             }
         }
-        
+
         if indexPath.section == kMapSourceSection { // section 1 (sets tileServerInt in defaults
             print("PreferenccesTableView Map Tile Server section Row at index:  \(indexPath.row)")
-            
+
             // Remove checkmark from selected tile server
             let selectedTileServerIndexPath = IndexPath(row: preferences.tileServerInt, section: indexPath.section)
             tableView.cellForRow(at: selectedTileServerIndexPath)?.accessoryType = .none
-            
+
             // Add checkmark to new tile server
             tableView.cellForRow(at: indexPath)?.accessoryType = .checkmark
             preferences.tileServerInt = indexPath.row
-            
+
             // Update map
             self.delegate?.didUpdateTileServer((indexPath as NSIndexPath).row)
         }
-        
+
         if indexPath.section == kActivityTypeSection {
             print("PreferencesTableView Activity Type section Row at index:  \(indexPath.row + 1)")
             let selected = IndexPath(row: preferences.locationActivityTypeInt - 1, section: indexPath.section)
-            
+
             tableView.cellForRow(at: selected)?.accessoryType = .none
-            
+
             // Add checkmark to new tile server
             tableView.cellForRow(at: indexPath)?.accessoryType = .checkmark
             preferences.locationActivityTypeInt = indexPath.row + 1 // +1 as activityType raw value starts at index 1
-            
+
             self.delegate?.didUpdateActivityType((indexPath as NSIndexPath).row + 1)
         }
-        
+
         if indexPath.section == kDefaultNameSection {
             print("PreferencesTableView Default Name cell clicked")
             self.navigationController?.pushViewController(DefaultNameSetupViewController(style: .grouped), animated: true)
         }
-        
+
         if indexPath.section == kGPXFilesLocationSection {
             print("PreferencesTableView GPX Files Location cell clicked")
             let documentVC = UIDocumentPickerViewController(documentTypes: [kUTTypeFolder as String], in: .open)
@@ -417,13 +430,13 @@ class PreferencesTableViewController: UITableViewController, UINavigationBarDele
             documentVC.delegate = self
             self.present(documentVC, animated: true)
         }
-        
+
         // Unselect row
         tableView.deselectRow(at: indexPath, animated: true)
     }
-    
+
     // MARK: - UIDocumentPickerDelegate
-    
+
     func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
         guard let folderURL = urls.first else {
             print("Didn't select any folder")
