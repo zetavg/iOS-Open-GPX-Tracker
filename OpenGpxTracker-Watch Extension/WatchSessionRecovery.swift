@@ -44,6 +44,8 @@ class WatchSessionRecovery {
 
     /// Lightweight metadata saved alongside the GPX recovery file.
     struct RecoveryMetadata: Codable {
+        /// The date/time when tracking was first started (nil if never started).
+        var trackStartDate: Date?
         /// Elapsed stopwatch time in seconds at the moment of the last save.
         var elapsedTime: TimeInterval
         /// Whether tracking was active (true) or paused (false) when saved.
@@ -63,12 +65,14 @@ class WatchSessionRecovery {
     ///
     /// - Parameters:
     ///   - session: The current `GPXSession` (aliased as `GPXMapView` on watchOS).
+    ///   - trackStartDate: The date/time when tracking was first started.
     ///   - elapsedTime: Current stopwatch elapsed time in seconds.
     ///   - isTracking: Whether the app is currently in `.tracking` status.
     ///   - lastGpxFilename: The last saved GPX filename (may be empty).
     ///   - hasWaypoints: Whether the session contains waypoints.
     ///
     static func save(session: GPXSession,
+                     trackStartDate: Date?,
                      elapsedTime: TimeInterval,
                      isTracking: Bool,
                      lastGpxFilename: String,
@@ -89,7 +93,8 @@ class WatchSessionRecovery {
                              encoding: .utf8)
 
         // 2. Save metadata
-        let meta = RecoveryMetadata(elapsedTime: elapsedTime,
+        let meta = RecoveryMetadata(trackStartDate: trackStartDate,
+                                    elapsedTime: elapsedTime,
                                     wasTracking: isTracking,
                                     lastGpxFilename: lastGpxFilename,
                                     hasWaypoints: hasWaypoints)

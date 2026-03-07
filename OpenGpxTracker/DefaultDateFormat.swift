@@ -45,19 +45,19 @@ class DefaultDateFormat {
     }
     
     /// Returns sample date time based on user input.
-    func getDate(processedFormat dateFormat: String, useUTC: Bool = false, useENLocale: Bool = false) -> String {
+    func getDate(processedFormat dateFormat: String, useUTC: Bool = false, useENLocale: Bool = false, date: Date = Date()) -> String {
         dateFormatter.dateFormat = dateFormat
         dateFormatter.timeZone = useUTC ? TimeZone(secondsFromGMT: 0) : TimeZone.current
         dateFormatter.locale = useENLocale ? Locale(identifier: "en_US_POSIX") : Locale.current
-        return dateFormatter.string(from: Date())
+        return dateFormatter.string(from: date)
     }
     
     /// Returns Preference stored date format and its settings.
-    func getDateFromPrefs() -> String {
+    func getDateFromPrefs(date: Date = Date()) -> String {
         let dateFormat = Preferences.shared.dateFormat
         let useUTC = Preferences.shared.dateFormatUseUTC
         let useEN = Preferences.shared.dateFormatUseEN
-        return getDate(processedFormat: dateFormat, useUTC: useUTC, useENLocale: useEN)
+        return getDate(processedFormat: dateFormat, useUTC: useUTC, useENLocale: useEN, date: date)
         
     }
 

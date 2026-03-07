@@ -125,6 +125,15 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate {
     /// Map View delegate 
     let mapViewDelegate = MapViewDelegate()
     
+    /// The date/time when tracking was first started for this session.
+    /// Used to generate the default filename based on start time rather than save time.
+    /// Persisted to UserDefaults so crash recovery can restore it.
+    var trackStartDate: Date? {
+        didSet {
+            UserDefaults.standard.set(trackStartDate?.timeIntervalSinceReferenceDate, forKey: "trackStartDate")
+        }
+    }
+    
     /// Stop watch instance to control elapsed time
     var stopWatch = StopWatch()
     
@@ -192,6 +201,7 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate {
                 timeLabel.text = stopWatch.elapsedTimeString
                 
                 map.clearMap()        // Clear map
+                trackStartDate = nil // Clear track start date
                 lastGpxFilename = "" // Clear last filename, so when saving it appears an empty field
 
                 map.coreDataHelper.clearAll()
@@ -218,6 +228,10 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate {
                 // Activate save & reset buttons
                 saveButton.backgroundColor = kBlueButtonBackgroundColor
                 resetButton.backgroundColor = kRedButtonBackgroundColor
+                // Capture tracking start time on first start
+                if trackStartDate == nil {
+                    trackStartDate = Date()
+                }
                 // start clock
                 self.stopWatch.start()
                 
@@ -902,7 +916,7 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate {
     ///
     func defaultFilename() -> String {
         let defaultDate = DefaultDateFormat()
-        let dateStr = defaultDate.getDateFromPrefs()
+        let dateStr = defaultDate.getDateFromPrefs(date: trackStartDate ?? Date())
         print("fileName:" + dateStr)
         return dateStr
     }
@@ -915,6 +929,9 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate {
             return
         }
 
+        if let ts = UserDefaults.standard.object(forKey: "trackStartDate") as? Double {
+            trackStartDate = Date(timeIntervalSinceReferenceDate: ts)
+        }
         lastGpxFilename = fileName
         // Adds last file name to core data as well
         self.map.coreDataHelper.add(toCoreData: fileName, willContinueAfterSave: false)
