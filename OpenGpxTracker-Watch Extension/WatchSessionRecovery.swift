@@ -4,22 +4,36 @@
 //
 //  Provides crash/force-quit recovery for the Watch app.
 //
-//  Persists the current GPX session to a recovery file after each
-//  trackpoint or waypoint change, so data can be restored on next launch.
+//  Uses an append-only JSONL journal to persist trackpoints and waypoints
+//  incrementally, avoiding the O(n) full-GPX-export on every persist.
+//  Each flush appends only new entries since the last flush (~8 KB fixed),
+//  keeping total I/O at O(T) instead of O(T²) over a session.
 //
 
 import Foundation
 import CoreGPX
+import CoreLocation
 
 ///
 /// Handles persistence and recovery of the active tracking session on watchOS.
 ///
-/// After every trackpoint or waypoint is added, the full session GPX is saved
-/// to a recovery file alongside a small metadata JSON (elapsed time, tracking
-/// status, etc.). On launch, `InterfaceController` checks for the recovery
-/// file and restores the session in a paused state.
+/// Trackpoints, waypoints, and segment breaks are buffered in memory and
+/// periodically flushed (appended) to a JSONL journal file.  A small metadata
+/// JSON is overwritten on each flush.  On launch, `InterfaceController` reads
+/// the journal back to rebuild the session in a paused state.
 ///
 class WatchSessionRecovery {
+
+    // MARK: - Singleton
+
+    /// Shared instance — holds the in-memory buffer between flushes.
+    static let shared = WatchSessionRecovery()
+    private init() {}
+
+    // MARK: - In-Memory Buffer
+
+    /// Journal entries accumulated since the last flush.
+    private var pendingEntries: [JournalEntry] = []
 
     // MARK: - File Paths
 
@@ -30,19 +44,32 @@ class WatchSessionRecovery {
         return library.appendingPathComponent("SessionRecovery", isDirectory: true)
     }
 
-    /// The GPX recovery file.
-    private static var recoveryGPXFileURL: URL {
-        return recoveryDirectoryURL.appendingPathComponent("_watchRecovery.gpx")
+    /// The JSONL journal file (append-only).
+    private static var journalFileURL: URL {
+        return recoveryDirectoryURL.appendingPathComponent("_watchRecovery.jsonl")
     }
 
-    /// JSON metadata for the recovery (elapsed time, status, etc.).
-    private static var recoveryMetadataURL: URL {
+    /// JSON metadata (overwritten on each flush).
+    private static var metadataFileURL: URL {
         return recoveryDirectoryURL.appendingPathComponent("_watchRecoveryMeta.json")
+    }
+
+    // MARK: - Journal Entry Model
+
+    /// A single line in the JSONL journal.
+    struct JournalEntry: Codable {
+        /// Entry type: "T" = trackpoint, "S" = segment break, "W" = waypoint.
+        let t: String
+        var lat: Double?
+        var lon: Double?
+        var ele: Double?
+        /// Unix timestamp (timeIntervalSince1970), trackpoints only.
+        var ts: Double?
     }
 
     // MARK: - Metadata Model
 
-    /// Lightweight metadata saved alongside the GPX recovery file.
+    /// Lightweight metadata saved alongside the journal.
     struct RecoveryMetadata: Codable {
         /// Elapsed stopwatch time in seconds at the moment of the last save.
         var elapsedTime: TimeInterval
@@ -54,93 +81,173 @@ class WatchSessionRecovery {
         var hasWaypoints: Bool
     }
 
-    // MARK: - Save
+    // MARK: - Append (memory only, no I/O)
 
-    /// Persist the current session to the recovery files.
+    /// Buffer a trackpoint. Called on every GPS update while tracking.
+    func appendTrackPoint(_ location: CLLocation) {
+        pendingEntries.append(JournalEntry(
+            t: "T",
+            lat: location.coordinate.latitude,
+            lon: location.coordinate.longitude,
+            ele: location.altitude,
+            ts: location.timestamp.timeIntervalSince1970
+        ))
+    }
+
+    /// Buffer a segment break. Called when tracking is paused.
+    func appendSegmentBreak() {
+        pendingEntries.append(JournalEntry(t: "S"))
+    }
+
+    /// Buffer a waypoint. Called when the user drops a pin.
+    func appendWaypoint(coordinate: CLLocationCoordinate2D, altitude: Double?) {
+        pendingEntries.append(JournalEntry(
+            t: "W",
+            lat: coordinate.latitude,
+            lon: coordinate.longitude,
+            ele: altitude
+        ))
+    }
+
+    // MARK: - Flush (write pending entries to disk)
+
+    /// Append all buffered entries to the journal file and overwrite metadata.
     ///
-    /// Called after every trackpoint / waypoint addition to ensure data
-    /// survives an unexpected termination.
-    ///
-    /// - Parameters:
-    ///   - session: The current `GPXSession` (aliased as `GPXMapView` on watchOS).
-    ///   - elapsedTime: Current stopwatch elapsed time in seconds.
-    ///   - isTracking: Whether the app is currently in `.tracking` status.
-    ///   - lastGpxFilename: The last saved GPX filename (may be empty).
-    ///   - hasWaypoints: Whether the session contains waypoints.
-    ///
-    static func save(session: GPXSession,
-                     elapsedTime: TimeInterval,
-                     isTracking: Bool,
-                     lastGpxFilename: String,
-                     hasWaypoints: Bool) {
+    /// - Parameter metadata: Current session metadata to persist.
+    func flush(metadata: RecoveryMetadata) {
+        let entries = pendingEntries
+        pendingEntries = []
+
+        let fm = FileManager.default
 
         // Ensure the recovery directory exists.
-        let fm = FileManager.default
-        if !fm.fileExists(atPath: recoveryDirectoryURL.path) {
-            try? fm.createDirectory(at: recoveryDirectoryURL,
+        if !fm.fileExists(atPath: Self.recoveryDirectoryURL.path) {
+            try? fm.createDirectory(at: Self.recoveryDirectoryURL,
                                     withIntermediateDirectories: true,
                                     attributes: nil)
         }
 
-        // 1. Save GPX
-        let gpxString = session.exportToGPXString()
-        try? gpxString.write(to: recoveryGPXFileURL,
-                             atomically: true,
-                             encoding: .utf8)
+        // 1. Append journal entries
+        if !entries.isEmpty {
+            let encoder = JSONEncoder()
+            var data = Data()
+            for entry in entries {
+                if let line = try? encoder.encode(entry) {
+                    data.append(line)
+                    data.append(0x0A) // newline
+                }
+            }
 
-        // 2. Save metadata
-        let meta = RecoveryMetadata(elapsedTime: elapsedTime,
-                                    wasTracking: isTracking,
-                                    lastGpxFilename: lastGpxFilename,
-                                    hasWaypoints: hasWaypoints)
-        if let data = try? JSONEncoder().encode(meta) {
-            try? data.write(to: recoveryMetadataURL, options: .atomic)
+            if fm.fileExists(atPath: Self.journalFileURL.path) {
+                // Append to existing file
+                if let handle = try? FileHandle(forWritingTo: Self.journalFileURL) {
+                    handle.seekToEndOfFile()
+                    handle.write(data)
+                    handle.closeFile()
+                }
+            } else {
+                // Create new file
+                try? data.write(to: Self.journalFileURL)
+            }
+        }
+
+        // 2. Overwrite metadata (small, fixed size ~200 bytes)
+        if let data = try? JSONEncoder().encode(metadata) {
+            try? data.write(to: Self.metadataFileURL, options: .atomic)
         }
     }
 
     // MARK: - Recover
 
-    /// Recovered session data, if any.
+    /// Recovered session data.
     struct RecoveredSession {
         let gpxRoot: GPXRoot
         let metadata: RecoveryMetadata
     }
 
-    /// Attempts to load a previously persisted session.
+    /// Attempts to load a previously persisted session from the JSONL journal.
     ///
-    /// - Returns: A `RecoveredSession` if recovery files exist and are valid,
+    /// - Returns: A `RecoveredSession` if recovery files exist and contain data,
     ///            otherwise `nil`.
     static func recover() -> RecoveredSession? {
         let fm = FileManager.default
 
-        guard fm.fileExists(atPath: recoveryGPXFileURL.path),
-              fm.fileExists(atPath: recoveryMetadataURL.path) else {
-            return nil
-        }
-
-        // Parse GPX
-        guard let gpxRoot = GPXParser(withURL: recoveryGPXFileURL)?.parsedData() else {
-            print("WatchSessionRecovery:: failed to parse recovery GPX")
-            clear()
+        guard fm.fileExists(atPath: journalFileURL.path),
+              fm.fileExists(atPath: metadataFileURL.path) else {
             return nil
         }
 
         // Parse metadata
-        guard let metaData = try? Data(contentsOf: recoveryMetadataURL),
+        guard let metaData = try? Data(contentsOf: metadataFileURL),
               let meta = try? JSONDecoder().decode(RecoveryMetadata.self, from: metaData) else {
             print("WatchSessionRecovery:: failed to parse recovery metadata")
             clear()
             return nil
         }
 
-        // Only treat as a valid recovery if there is actual content.
-        let hasTrackPoints = gpxRoot.tracks.contains { track in
-            track.segments.contains { $0.points.count > 0 }
+        // Parse JSONL journal
+        guard let journalData = try? Data(contentsOf: journalFileURL),
+              let journalString = String(data: journalData, encoding: .utf8) else {
+            print("WatchSessionRecovery:: failed to read journal file")
+            clear()
+            return nil
         }
-        let hasWaypoints = gpxRoot.waypoints.count > 0
 
-        guard hasTrackPoints || hasWaypoints else {
-            print("WatchSessionRecovery:: recovery file is empty, ignoring")
+        let decoder = JSONDecoder()
+        let gpxRoot = GPXRoot(creator: kGPXCreatorString)
+        let track = GPXTrack()
+        var currentSegment = GPXTrackSegment()
+        var hasContent = false
+
+        for line in journalString.split(separator: "\n", omittingEmptySubsequences: true) {
+            guard let lineData = line.data(using: .utf8),
+                  let entry = try? decoder.decode(JournalEntry.self, from: lineData) else {
+                continue // skip corrupted lines
+            }
+
+            switch entry.t {
+            case "T":
+                guard let lat = entry.lat, let lon = entry.lon else { continue }
+                let pt = GPXTrackPoint(latitude: lat, longitude: lon)
+                if let ele = entry.ele {
+                    pt.elevation = ele
+                }
+                if let ts = entry.ts {
+                    pt.time = Date(timeIntervalSince1970: ts)
+                }
+                currentSegment.add(trackpoint: pt)
+                hasContent = true
+
+            case "S":
+                if currentSegment.points.count > 0 {
+                    track.add(trackSegment: currentSegment)
+                    currentSegment = GPXTrackSegment()
+                }
+
+            case "W":
+                guard let lat = entry.lat, let lon = entry.lon else { continue }
+                let wpt = GPXWaypoint(latitude: lat, longitude: lon)
+                if let ele = entry.ele {
+                    wpt.elevation = ele
+                }
+                gpxRoot.add(waypoint: wpt)
+                hasContent = true
+
+            default:
+                continue
+            }
+        }
+
+        // Finalize the last segment
+        if currentSegment.points.count > 0 {
+            track.add(trackSegment: currentSegment)
+        }
+        if track.segments.count > 0 {
+            gpxRoot.add(track: track)
+        }
+
+        guard hasContent else {
+            print("WatchSessionRecovery:: recovery journal is empty, ignoring")
             clear()
             return nil
         }
@@ -150,16 +257,17 @@ class WatchSessionRecovery {
 
     // MARK: - Clear
 
-    /// Removes all recovery files. Call after a successful user-Save or Reset.
+    /// Removes all recovery files and discards the memory buffer.
+    /// Call after a successful user-Save or Reset.
     static func clear() {
+        shared.pendingEntries = []
         let fm = FileManager.default
-        try? fm.removeItem(at: recoveryGPXFileURL)
-        try? fm.removeItem(at: recoveryMetadataURL)
+        try? fm.removeItem(at: journalFileURL)
+        try? fm.removeItem(at: metadataFileURL)
     }
 
     /// Returns `true` if recovery data exists on disk.
     static var hasRecoveryData: Bool {
-        let fm = FileManager.default
-        return fm.fileExists(atPath: recoveryGPXFileURL.path)
+        return FileManager.default.fileExists(atPath: journalFileURL.path)
     }
 }
