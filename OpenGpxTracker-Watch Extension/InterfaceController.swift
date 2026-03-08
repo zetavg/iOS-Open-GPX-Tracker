@@ -168,6 +168,7 @@ class InterfaceController: WKInterfaceController {
                 self.stopWatch.stop()
                 // start new track segment
                 self.map.startNewTrackSegment()
+                WatchSessionRecovery.shared.appendSegmentBreak()
             }
         }
     }
@@ -259,6 +260,7 @@ class InterfaceController: WKInterfaceController {
             map.addWaypoint(waypoint)
             print("Adding waypoint at \(currentCoordinates)")
             self.hasWaypoints = true
+            WatchSessionRecovery.shared.appendWaypoint(coordinate: currentCoordinates, altitude: altitude)
             persistSessionForRecovery(force: true)
         }
 
@@ -470,6 +472,7 @@ extension InterfaceController: CLLocationManagerDelegate {
         if gpxTrackingStatus == .tracking {
             print("didUpdateLocation: adding point to track (\(newLocation.coordinate.latitude),\(newLocation.coordinate.longitude))")
             map.addPointToCurrentTrackSegmentAtLocation(newLocation)
+            WatchSessionRecovery.shared.appendTrackPoint(newLocation)
             totalTrackedDistanceLabel.setText(map.totalTrackedDistance.toDistance(useImperial: preferences.useImperial))
             persistSessionForRecovery(force: false)
         }
@@ -500,12 +503,13 @@ extension InterfaceController {
             lastPersistTime = Date()
         }
 
-        WatchSessionRecovery.save(
-            session: map,
-            elapsedTime: stopWatch.elapsedTime,
-            isTracking: gpxTrackingStatus == .tracking,
-            lastGpxFilename: lastGpxFilename,
-            hasWaypoints: hasWaypoints
+        WatchSessionRecovery.shared.flush(
+            metadata: WatchSessionRecovery.RecoveryMetadata(
+                elapsedTime: stopWatch.elapsedTime,
+                wasTracking: gpxTrackingStatus == .tracking,
+                lastGpxFilename: lastGpxFilename,
+                hasWaypoints: hasWaypoints
+            )
         )
     }
 
